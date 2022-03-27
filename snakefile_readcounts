@@ -1,0 +1,31 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+paramspace = pd.read_csv("data/metadata/paramspace_cfDNA_phaseI.csv", index_col='cfDNA_folder')
+
+cfDNA_FILE_PATHS = paramspace["cfDNA_bam_path"]
+SAMPLES = paramspace["pt_id"]
+FOLDERS = paramspace.index
+
+OUTPUT_cfDNA_COUNT = expand("data/{pt_cfdna_count}/{output_f_cfdna_count}/cs1e9/cfDNA_count.csv", zip, pt_cfdna_count = SAMPLES, output_f_cfdna_count = FOLDERS)
+
+
+
+rule all: 
+    input: OUTPUT_cfDNA_COUNT
+    
+
+rule count_reads:
+    input: 
+        bam_file = lambda wildcards: str(Path(cfDNA_FILE_PATHS[wildcards.output_f_cfdna_count]))
+    output: 
+        counted_bam_file = "data/{pt_cfdna_count}/{output_f_cfdna_count}/cs1e9/cfDNA_count.csv"
+    conda: 
+        "envs/conda_samtools.yml"
+    shell:
+        "samtools view -c {input.bam_file} > data/{wildcards.pt_cfdna_count}/{wildcards.output_f_cfdna_count}/cs1e9/cfDNA_count.csv"
+        
+
+
+

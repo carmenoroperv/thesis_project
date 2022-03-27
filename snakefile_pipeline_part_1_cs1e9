@@ -1,0 +1,216 @@
+#Description: this file will take as input the raw patient data and make the k-mer count for both the tumor and the germline for each patient. Then it will subtract it, so that we have the unique k-mers that are only in the cancer for each patients and save those. 
+#This version of the file has in the kmc commands the flag -cs1000000000, which should lead to the larger counts not being pooled in the last collumn (default = 255)
+
+import pandas as pd
+from pathlib import Path
+import os
+
+####MAKE THE TMP FOLDER WITH WILDCARD NAME!
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseI.csv", index_col='pt_id')
+TUMOR_FILES = paramspace["tumor_bam_path"]
+GERMLINE_FILES = paramspace["germline_bam_path"]
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+OUTPUT_TUMOR = expand("data/{pt_tumor}/{output_f_tumor}/cs1e9/tumor_kmers_cs1e9.kmc_pre", zip, pt_tumor=SAMPLES, output_f_tumor = OUTPUT_PT_FOLDER)
+OUTPUT_GERMLINE = expand("data/{pt_normal}/{output_f_normal}/cs1e9/germline_kmers_cs1e9.kmc_pre", zip, pt_normal=SAMPLES, output_f_normal = OUTPUT_PT_FOLDER)
+OUTPUT_UNIQUE = expand("data/{pt}/{output_f}/cs1e9/unique_tumor_kmers_cs1e9.kmc_pre", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+
+TUMOR_HISTOGRAM = expand("data/{pt_tumor_plot}/{output_f_tumor_plot}/cs1e9/histogram_tumor_kmers_cs1e9.png", zip, pt_tumor_plot=SAMPLES, output_f_tumor_plot = OUTPUT_PT_FOLDER)
+GERMLINE_HISTOGRAM = expand("data/{pt_normal_plot}/{output_f_normal_plot}/cs1e9/histogram_germline_kmers_cs1e9.png", zip, pt_normal_plot=SAMPLES, output_f_normal_plot = OUTPUT_PT_FOLDER)
+UNIQUE_HISTOGRAM = expand("data/{pt_unique_plot}/{output_f_unique_plot}/cs1e9/histogram_unique_tumor_kmers_cs1e9.png", zip, pt_unique_plot=SAMPLES, output_f_unique_plot = OUTPUT_PT_FOLDER)
+
+for pt, fd in zip(SAMPLES, OUTPUT_PT_FOLDER):
+    tmp_folder_tumor = "tmp_tumor/tmp_tumor_" + str(pt) + "/" + str(fd)  + "_cs1e9/"
+    Path(tmp_folder_tumor).mkdir(parents=True, exist_ok=True)
+    
+    tmp_folder_healthy = "tmp_normal/tmp_normal_" + str(pt) + "/" + str(fd)  + "_cs1e9/"
+    Path(tmp_folder_healthy).mkdir(parents=True, exist_ok=True)
+    
+    output_folder = "data/" + str(pt) + "/" + str(fd)  + "/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+rule all: 
+    input:  OUTPUT_TUMOR, OUTPUT_GERMLINE, OUTPUT_UNIQUE, TUMOR_HISTOGRAM, GERMLINE_HISTOGRAM, UNIQUE_HISTOGRAM
+    
+
+####COUNT TUMOR#####
+
+rule high_cs_count_tumor:
+    input:
+        bam_file = lambda wildcards: str(Path(TUMOR_FILES[wildcards.pt_tumor]))
+    output: 
+        kmers_pre = "data/{pt_tumor}/{output_f_tumor}/cs1e9/tumor_kmers_cs1e9.kmc_pre",
+        kmers_suf = "data/{pt_tumor}/{output_f_tumor}/cs1e9/tumor_kmers_cs1e9.kmc_suf",
+    params:
+        tmpdir = "tmp_tumor/tmp_tumor_{pt_tumor}/{output_f_tumor}_cs1e9/"
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        'kmc -k50 -sm -ci0 -cs1000000000 -cx1000000000 -fbam {input.bam_file} data/{wildcards.pt_tumor}/{wildcards.output_f_tumor}/cs1e9/tumor_kmers_cs1e9 {params.tmpdir}'
+
+        #"kmc -k50 -m{resuources.mem_mb} -sm -t{threads} -ci0 -fbam {input.tumor_bam} data/{wildcards.pt_tumor}/tumor_kmers tmp_tumor/tmp_tumor_{wildcards.pt_tumor}/" #remember to have a tmp folder in the directory where we are working
+        #k --> kmer length
+        #ci exclude k-mers occuring less than (default 2)
+        #cs maximal value of counter (default 255) ??
+        #cx max value (default 1e9)
+
+    
+        
+####COUNT GERMLINE##
+
+rule high_cs_count_germline:
+    input:
+        bam_file = lambda wildcards: str(Path(GERMLINE_FILES[wildcards.pt_normal]))
+    output: 
+        kmers_pre = "data/{pt_normal}/{output_f_normal}/cs1e9/germline_kmers_cs1e9.kmc_pre", 
+        kmers_suf = "data/{pt_normal}/{output_f_normal}/cs1e9/germline_kmers_cs1e9.kmc_suf"
+    params:
+        tmpdir = "tmp_normal/tmp_normal_{pt_normal}/{output_f_normal}_cs1e9/"
+    conda: 
+        "envs/ctDNA.yml"
+    threads: 1
+    shell:
+        'kmc -k50 -sm -ci0 -cs1000000000 -cx1000000000 -fbam {input.bam_file} data/{wildcards.pt_normal}/{wildcards.output_f_normal}/cs1e9/germline_kmers_cs1e9 {params.tmpdir}'
+        #"kmc_scripts/count_kmers.py"
+        #k --> kmer length
+        #ci exclude k-mers occuring less than (default 2)
+        #cs minimal value of counter (default 255) ??
+        #cx max value (default 1e9)
+
+####INTERSECTION####
+
+rule high_cs_subtract_tumor_germline:
+    input:
+        tumor_pre = "data/{pt}/{output_f}/cs1e9/tumor_kmers_cs1e9.kmc_pre",
+        tumor_suf = "data/{pt}/{output_f}/cs1e9/tumor_kmers_cs1e9.kmc_suf",
+        germline_pre = "data/{pt}/{output_f}/cs1e9/germline_kmers_cs1e9.kmc_pre",
+        germline_suf = "data/{pt}/{output_f}/cs1e9/germline_kmers_cs1e9.kmc_suf"
+    output: 
+        unique_tumor_kmers_pre = "data/{pt}/{output_f}/cs1e9/unique_tumor_kmers_cs1e9.kmc_pre",
+        unique_tumor_kmers_suf = "data/{pt}/{output_f}/cs1e9/unique_tumor_kmers_cs1e9.kmc_suf"
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        "kmc_tools simple data/{wildcards.pt}/{wildcards.output_f}/cs1e9/tumor_kmers_cs1e9 -ci0 -cx1000000000 data/{wildcards.pt}/{wildcards.output_f}/cs1e9/germline_kmers_cs1e9 -ci0 -cx1000000000 kmers_subtract data/{wildcards.pt}/{wildcards.output_f}/cs1e9/unique_tumor_kmers_cs1e9 -ci0 -cx1000000000 -cs1000000000"
+        #"kmc_scripts/kmers_subtract.py"
+        #we can put -ci and -cx here for each input as well, and also for the output
+        #there are several options for the counters, see kmc_tools simple --help. They can be defined with -oc, and I think what we want is -ocleft (take the counts from the left data base, so the tumor?)
+
+        
+        
+#########################################################################
+
+
+####PLOTS###########
+rule high_cs_make_plotfile_tumor:
+    input: 
+        kmers_pre = "data/{pt_tumor_plot}/{output_f_tumor_plot}/cs1e9/tumor_kmers_cs1e9.kmc_pre", 
+        kmers_suf = "data/{pt_tumor_plot}/{output_f_tumor_plot}/cs1e9/tumor_kmers_cs1e9.kmc_suf"
+    output: 
+        plotdata = "data/{pt_tumor_plot}/{output_f_tumor_plot}/cs1e9/plotdata_tumor_cs1e9.txt"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/{wildcards.pt_tumor_plot}/{wildcards.output_f_tumor_plot}/cs1e9/tumor_kmers_cs1e9 -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+        #"kmc_scripts/kmers_transform.py"
+
+
+rule high_cs_filter_plotfile_tumor:
+    input: 
+        plotdata = "data/{pt_tumor_plot}/{output_f_tumor_plot}/cs1e9/plotdata_tumor_cs1e9.txt"
+    output: 
+        plotdata_filtered = "data/{pt_tumor_plot}/{output_f_tumor_plot}/cs1e9/plotdata_tumor_cs1e9_filtered.txt"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+
+rule high_cs_make_plot_tumor:
+    input: 
+        input_filename = "data/{pt_tumor_plot}/{output_f_tumor_plot}/cs1e9/plotdata_tumor_cs1e9_filtered.txt"
+    output: 
+        output_filename = "data/{pt_tumor_plot}/{output_f_tumor_plot}/cs1e9/histogram_tumor_kmers_cs1e9.png"
+    conda: 
+        "envs/ctDNA.yml"
+    script:
+        "histogram_plots.R"
+
+
+####PLOTS###########
+rule high_cs_make_plotfile_germline:
+    input: 
+        kmers_pre = "data/{pt_normal_plot}/{output_f_normal_plot}/cs1e9/germline_kmers_cs1e9.kmc_pre", 
+        kmers_suf = "data/{pt_normal_plot}/{output_f_normal_plot}/cs1e9/germline_kmers_cs1e9.kmc_suf"
+    output: 
+        plotdata = "data/{pt_normal_plot}/{output_f_normal_plot}/cs1e9/plotdata_germline_cs1e9.txt"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/{wildcards.pt_normal_plot}/{wildcards.output_f_normal_plot}/cs1e9/germline_kmers_cs1e9 -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+        
+
+rule high_cs_filter_plotfile_germline:
+    input: 
+        plotdata = "data/{pt_normal_plot}/{output_f_normal_plot}/cs1e9/plotdata_germline_cs1e9.txt"
+    output: 
+        plotdata_filtered = "data/{pt_normal_plot}/{output_f_normal_plot}/cs1e9/plotdata_germline_cs1e9_filtered.txt"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+
+
+rule high_cs_make_plot_germline:
+    input: 
+        input_filename = "data/{pt_normal_plot}/{output_f_normal_plot}/cs1e9/plotdata_germline_cs1e9_filtered.txt"
+    output: 
+        output_filename = "data/{pt_normal_plot}/{output_f_normal_plot}/cs1e9/histogram_germline_kmers_cs1e9.png"
+    conda: 
+        "envs/ctDNA.yml"
+    script:
+        "histogram_plots.R"
+
+####PLOTS###########
+rule high_cs_make_plotfile_unique_tumor:
+    input: 
+        kmers_pre = "data/{pt_unique_plot}/{output_f_unique_plot}/cs1e9/unique_tumor_kmers_cs1e9.kmc_pre",
+        kmers_suf = "data/{pt_unique_plot}/{output_f_unique_plot}/cs1e9/unique_tumor_kmers_cs1e9.kmc_suf"
+    output: 
+        plotdata = "data/{pt_unique_plot}/{output_f_unique_plot}/cs1e9/plotdata_unique_tumor_cs1e9.txt"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/{wildcards.pt_unique_plot}/{wildcards.output_f_unique_plot}/cs1e9/unique_tumor_kmers_cs1e9 -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+        #"kmc_scripts/kmers_transform.py"
+
+
+rule high_cs_filter_plotfile_unique_tumor:
+    input:
+        plotdata = "data/{pt_unique_plot}/{output_f_unique_plot}/cs1e9/plotdata_unique_tumor_cs1e9.txt"
+    output: 
+        plotdata_filtered = "data/{pt_unique_plot}/{output_f_unique_plot}/cs1e9/plotdata_unique_tumor_cs1e9_filtered.txt"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+        
+        
+rule high_cs_make_plot:
+    input: 
+        input_filename = "data/{pt_unique_plot}/{output_f_unique_plot}/cs1e9/plotdata_unique_tumor_cs1e9_filtered.txt"
+    output: 
+        output_filename = "data/{pt_unique_plot}/{output_f_unique_plot}/cs1e9/histogram_unique_tumor_kmers_cs1e9.png"
+    conda: 
+        "envs/ctDNA.yml"
+    script:
+        "histogram_plots.R"
+
+#NOTES ABOUT KMC
+#http://sun.aei.polsl.pl/REFRESH/kmc/downloads/2.3.0/kmc_tools.pdf
+#kmers_substract 
+    #The output database will contain only k-mers that are present in the first input set but absent in the second one. The counter value is equal to the value in the first input set.
+
+#counters_substract 
+    #The output database will contain only k-mers that are present in the first input set and have counters higher than the apropriate k-mers in the second set. For each k-mer the counter is equal to the difference between the counter in the first set and the counter in the second set

@@ -1,0 +1,7 @@
+
+
+rule copy_bams:
+    conda: 
+        "../envs/ctDNA.yml" 
+    script: 
+        "copy_bam_files.py"

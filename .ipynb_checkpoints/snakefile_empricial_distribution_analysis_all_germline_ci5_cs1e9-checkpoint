@@ -1,0 +1,64 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+paramspace = pd.read_csv("data/metadata/paramspace_empirical_dist_analysis_phaseI.csv", index_col = 0)
+
+print(paramspace.head())
+
+PATIENTS = paramspace["patient_id"]
+OTHER_PATIENTS = paramspace["other_patient_id"]
+UNIQUE_KMERS_PATHS = paramspace["unique_tumor_kmers_folder"]
+CFDNA_FOLDERS = paramspace["other_patient_cfDNA_folder"]
+INDEX = paramspace.index
+
+print(INDEX)
+
+
+INTERSECTION_PRE = expand("data/{pt}/ratio_emp_dist_analysis_all_germline_ci5_cs1e9/intersection_files/cfDNA_kmers_PT_{other_pt}_SAMPLE_{cfDNA_sample}_unique_tumor_kmers_intersect_{index}.kmc_pre", zip, pt = PATIENTS, other_pt = OTHER_PATIENTS, cfDNA_sample = CFDNA_FOLDERS, index = INDEX)
+PLOTDATA_INTERSECTION = expand("data/{pt}/ratio_emp_dist_analysis_all_germline_ci5_cs1e9/plotdata_files/plotdata_intersection_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}.txt", zip, pt = PATIENTS, other_pt = OTHER_PATIENTS, cfDNA_sample = CFDNA_FOLDERS, index = INDEX)
+RATIOS = expand("data/{pt}/ratio_emp_dist_analysis_all_germline_ci5_cs1e9/ratios/big_ratio_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}.csv" , zip, pt = PATIENTS, other_pt = OTHER_PATIENTS, cfDNA_sample = CFDNA_FOLDERS, index = INDEX)
+
+
+rule all: 
+    input: INTERSECTION_PRE, PLOTDATA_INTERSECTION, RATIOS
+
+rule emp_dist_analysis_intersect_cfDNA_unique_tumor_all_germline_ci5_cs1e9:
+    input:
+        unique_tumor_kmers = lambda wildcards: str("data/" + str(wildcards.pt) + "/" + str(Path(UNIQUE_KMERS_PATHS[int(wildcards.index)])) +  "/all_germline_ci5_cs1e9/unique_tumor_kmers_all_germline_singletons_excluded_tumor_4_cs.kmc_pre"),
+        cfDNA_kmers = "data/{other_pt}/{cfDNA_sample}/cs1e9/cfDNA_kmers_cs1e9.kmc_pre"
+    output: 
+        intersections_pre = "data/{pt}/ratio_emp_dist_analysis_all_germline_ci5_cs1e9/intersection_files/cfDNA_kmers_PT_{other_pt}_SAMPLE_{cfDNA_sample}_unique_tumor_kmers_intersect_{index}.kmc_pre", # _{index}
+        intersections_suf = "data/{pt}/ratio_emp_dist_analysis_all_germline_ci5_cs1e9/intersection_files/cfDNA_kmers_PT_{other_pt}_SAMPLE_{cfDNA_sample}_unique_tumor_kmers_intersect_{index}.kmc_suf"
+    params: 
+        unique_tumor_kmers_file = lambda wildcards: str("data/" + str(wildcards.pt) + "/" + str(Path(UNIQUE_KMERS_PATHS[int(wildcards.index)])) +  "/all_germline_ci5_cs1e9/unique_tumor_kmers_all_germline_singletons_excluded_tumor_4_cs")
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        "kmc_tools simple data/{wildcards.other_pt}/{wildcards.cfDNA_sample}/cs1e9/cfDNA_kmers_cs1e9 -ci0 -cx1000000000 {params.unique_tumor_kmers_file} -ci0 -cx1000000000 intersect data/{wildcards.pt}/ratio_emp_dist_analysis_all_germline_ci5_cs1e9/intersection_files/cfDNA_kmers_PT_{wildcards.other_pt}_SAMPLE_{wildcards.cfDNA_sample}_unique_tumor_kmers_intersect_{wildcards.index} -ci0 -cx1000000000 -cs1000000000 -ocleft" 
+
+
+
+rule emp_dist_analysis_make_plotfile_intersection_all_germline_ci5_cs1e9:
+    input: 
+        intersection_pre = "data/{pt}/ratio_emp_dist_analysis_all_germline_ci5_cs1e9/intersection_files/cfDNA_kmers_PT_{other_pt}_SAMPLE_{cfDNA_sample}_unique_tumor_kmers_intersect_{index}.kmc_pre"
+    output: 
+        plotdata = "data/{pt}/ratio_emp_dist_analysis_all_germline_ci5_cs1e9/plotdata_files/plotdata_intersection_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}.txt"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/{wildcards.pt}/ratio_emp_dist_analysis_all_germline_ci5_cs1e9/intersection_files/cfDNA_kmers_PT_{wildcards.other_pt}_SAMPLE_{wildcards.cfDNA_sample}_unique_tumor_kmers_intersect_{wildcards.index} -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule emp_dist_analysis_calculate_big_ratio_all_germline_ci5_cs1e9:
+    input: 
+        intersection = "data/{pt}/ratio_emp_dist_analysis_all_germline_ci5_cs1e9/plotdata_files/plotdata_intersection_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}.txt",
+        all_cfDNA = "data/{other_pt}/{cfDNA_sample}/cs1e9/plotdata_cfDNA_cs1e9.txt",                
+        unique_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[int(wildcards.index)])) + "/all_germline_ci5_cs1e9/plotdata_unique_tumor_all_germline_singletons_excluded_tumor_4_cs_filtered.txt"),
+        all_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[int(wildcards.index)])) + "/ci5_cs1e9/plotdata_tumor_singletons_excluded_tumor_4_cs_filtered.txt")
+    output: 
+        ratio = "data/{pt}/ratio_emp_dist_analysis_all_germline_ci5_cs1e9/ratios/big_ratio_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}.csv" #This should be a csv with just one position where it saves the ratio for the specific sample
+    conda: 
+        "envs/r4base.yml"
+    script:
+        "calculate_ratio.R"

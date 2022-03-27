@@ -1,0 +1,15 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Select jobs to execute...
+
+[Fri Feb 11 09:49:24 2022]
+rule copy_bams:
+    jobid: 0
+    resources: mem_mb=100000, disk_mb=1000, tmpdir=/scratch/60586749, time=10:00:00
+
+python -c "import sys; print('.'.join(map(str, sys.version_info[:2])))"
+Activating conda environment: /faststorage/project/c2i-colon/WorkSpaces/CarmenAndAnika/utils_scripts/.snakemake/conda/85f79cf46526e7d8c140b18b1f3a9c7d
+python /faststorage/project/c2i-colon/WorkSpaces/CarmenAndAnika/utils_scripts/.snakemake/scripts/tmp0icgfi1l.copy_bam_files.py
+Activating conda environment: /faststorage/project/c2i-colon/WorkSpaces/CarmenAndAnika/utils_scripts/.snakemake/conda/85f79cf46526e7d8c140b18b1f3a9c7d

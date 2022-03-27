@@ -1,0 +1,184 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Select jobs to execute...
+
+[Fri Feb 11 11:56:38 2022]
+rule copy_bams:
+    jobid: 0
+    resources: mem_mb=250000, disk_mb=1000, tmpdir=/scratch/60596703, time=10:00:00
+
+python -c "import sys; print('.'.join(map(str, sys.version_info[:2])))"
+Activating conda environment: /faststorage/project/c2i-colon/WorkSpaces/CarmenAndAnika/utils_scripts/.snakemake/conda/85f79cf46526e7d8c140b18b1f3a9c7d
+python /faststorage/project/c2i-colon/WorkSpaces/CarmenAndAnika/utils_scripts/.snakemake/scripts/tmpjim7n8vo.copy_bam_files.py
+Activating conda environment: /faststorage/project/c2i-colon/WorkSpaces/CarmenAndAnika/utils_scripts/.snakemake/conda/85f79cf46526e7d8c140b18b1f3a9c7d
+146
+Copying sample C05707 data
+Copying subfolder C55A05707D_cfdna_N295-1106 files
+Copying file C55A05707D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C54A05707D_cfdna_N295-1101 files
+Copying file C54A05707D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C43T05707D_frfr_N295-1727 files
+Copying file C43T05707D_frfr.tumor.alignment.bam
+Copying file C46A05707D_buffycoat.normal.alignment.bam
+Copying sample C03736 data
+Copying subfolder C215A03736D_cfdna_N295-1029 files
+Copying file C215A03736D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C216A03736D_cfdna_N295-980 files
+Copying file C216A03736D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C228A03736D_cfdna_N295-669 files
+Copying file C228A03736D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C213A03736D_cfdna_N295-1032 files
+Copying file C213A03736D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C219A03736D_cfdna_N295-1040 files
+Copying file C219A03736D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C214A03736D_cfdna_N295-1031 files
+Copying file C214A03736D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C227A03736D_cfdna_N295-291 files
+Copying file C227A03736D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C225T03736D_frfr_N295-889 files
+Copying file C21A03736D_buffycoat.normal.alignment.bam
+Copying file C225T03736D_frfr.tumor.alignment.bam
+Copying subfolder C211A03736D_cfdna_N295-1037 files
+Copying file C211A03736D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C217A03736D_cfdna_N295-982 files
+Copying file C217A03736D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C212A03736D_cfdna_N295-1033 files
+Copying file C212A03736D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C218A03736D_cfdna_N295-1043 files
+Copying file C218A03736D_cfdna.aligned.sorted.markdup.bam
+Copying sample C06382 data
+Copying subfolder C121A06382D_cfdna_N295-1549 files
+Copying file C121A06382D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C119A06382D_cfdna_N295-1444 files
+Copying file C119A06382D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C122A06382D_cfdna_N295-1588 files
+Copying file C122A06382D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C25T06382D_frfr_N295-870 files
+Copying file C22A06382D_buffycoat.normal.alignment.bam
+Copying file C25T06382D_frfr.tumor.alignment.bam
+Copying subfolder C120A06382D_cfdna_N295-1500 files
+Copying file C120A06382D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C39A06382D_cfdna_N295-1026 files
+Copying file C39A06382D_cfdna.aligned.sorted.markdup.bam
+Copying sample C05176 data
+Copying subfolder C235A05176D_cfdna_N295-546 files
+Copying file C235A05176D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C237A05176D_cfdna_N295-267 files
+Copying file C237A05176D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C236A05176D_cfdna_N295-501 files
+Copying file C236A05176D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C238A05176D_cfdna_N295-324 files
+Copying file C238A05176D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C242A05176D_cfdna_N295-1176 files
+Copying file C242A05176D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C244A05176D_cfdna_N295-1331 files
+Copying file C244A05176D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C239A05176D_cfdna_N295-627 files
+Copying file C239A05176D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C131T05176D_frfr_N295-1700 files
+Copying file C131T05176D_frfr.tumor.alignment.bam
+Copying file C233A05176D_buffycoat.normal.alignment.bam
+Copying subfolder C240A05176D_cfdna_N295-630 files
+Copying file C240A05176D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C241A05176D_cfdna_N295-1148 files
+Copying file C241A05176D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C134T05176D_frfr_N295-897 files
+Copying file C233A05176D_buffycoat.normal.alignment.bam
+Copying file C134T05176D_frfr.tumor.alignment.bam
+Copying subfolder C243A05176D_cfdna_N295-1210 files
+Copying file C243A05176D_cfdna.aligned.sorted.markdup.bam
+Copying sample C05101 data
+Copying subfolder C251A05101D_cfdna_N295-496 files
+Copying file C251A05101D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C261A05101D_cfdna_N295-1291 files
+Copying file C261A05101D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C256A05101D_cfdna_N295-702 files
+Copying file C256A05101D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C262A05101D_cfdna_N295-473 files
+Copying file C262A05101D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C258A05101D_cfdna_N295-1124 files
+Copying file C258A05101D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C260A05101D_cfdna_N295-1249 files
+Copying file C260A05101D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C144T05101D_ffpe_N295-1680 files
+Copying file C250A05101D_buffycoat.normal.alignment.bam
+Copying file C144T05101D_ffpe.tumor.alignment.bam
+Copying subfolder C259A05101D_cfdna_N295-1204 files
+Copying file C259A05101D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C257A05101D_cfdna_N295-1085 files
+Copying file C257A05101D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C253A05101D_cfdna_N295-488 files
+Copying file C253A05101D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C255A05101D_cfdna_N295-634 files
+Copying file C255A05101D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C254A05101D_cfdna_N295-612 files
+Copying file C254A05101D_cfdna.aligned.sorted.markdup.bam
+Copying sample C06467 data
+Copying subfolder C92A06467D_cfdna_N295-1601 files
+Copying file C92A06467D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C90A06467D_cfdna_N295-1533 files
+Copying file C90A06467D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C29T06467D_ffpe_N295-930 files
+Copying file C29T06467D_ffpe.tumor.alignment.bam
+Copying file C11A06467D_buffycoat.normal.alignment.bam
+Copying subfolder C27A06467D_cfdna_N295-1007 files
+Copying file C27A06467D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C89A06467D_cfdna_N295-1482 files
+Copying file C89A06467D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C91A06467D_cfdna_N295-1580 files
+Copying file C91A06467D_cfdna.aligned.sorted.markdup.bam
+Copying sample C05638 data
+Copying subfolder C73A05638D_cfdna_N295-307 files
+Copying file C73A05638D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C72A05638D_cfdna_N295-284 files
+Copying file C72A05638D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C63T05638D_ffpe_N295-1682 files
+Copying file C63T05638D_ffpe.tumor.alignment.bam
+Copying file C70A05638D_buffycoat.normal.alignment.bam
+Copying sample C04847 data
+Copying subfolder C129A04847D_cfdna_N295-261 files
+Copying file C129A04847D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C132A04847D_cfdna_N295-679 files
+Copying file C132A04847D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C130A04847D_cfdna_N295-491 files
+Copying file C130A04847D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C119T04847D_ffpe_N295-1725 files
+Copying file C126A04847D_buffycoat.normal.alignment.bam
+Copying file C119T04847D_ffpe.tumor.alignment.bam
+Copying subfolder C134A04847D_cfdna_N295-1056 files
+Copying file C134A04847D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C131A04847D_cfdna_N295-626 files
+Copying file C131A04847D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C133A04847D_cfdna_N295-685 files
+Copying file C133A04847D_cfdna.aligned.sorted.markdup.bam
+Copying sample C05202 data
+Copying subfolder C257A05202D_cfdna_N295-1048 files
+Copying file C257A05202D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C262A05202D_cfdna_N295-1254 files
+Copying file C262A05202D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C258A05202D_cfdna_N295-1078 files
+Copying file C258A05202D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C255A05202D_cfdna_N295-329 files
+Copying file C255A05202D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C254A05202D_cfdna_N295-503 files
+Copying file C254A05202D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C121T05202D_frfr_N295-898 files
+Copying file C124A05202D_buffycoat.normal.alignment.bam
+Copying file C121T05202D_frfr.tumor.alignment.bam
+Copying subfolder C263A05202D_cfdna_N295-1336 files
+Copying file C263A05202D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C261A05202D_cfdna_N295-1207 files
+Copying file C261A05202D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C256A05202D_cfdna_N295-704 files
+Copying file C256A05202D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C260A05202D_cfdna_N295-1158 files
+Copying file C260A05202D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C264A05202D_cfdna_N295-1349 files
+Copying file C264A05202D_cfdna.aligned.sorted.markdup.bam
+Copying subfolder C259A05202D_cfdna_N295-1099 files
+Copying file C259A05202D_cfdna.aligned.sorted.markdup.bam
+[Fri Feb 11 19:50:17 2022]
+Finished job 0.
+1 of 1 steps (100%) done

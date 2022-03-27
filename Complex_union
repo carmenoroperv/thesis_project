@@ -1,0 +1,23 @@
+INPUT:
+file1 = data/C04689/C123T04689D_frfr_N295-450/germline_kmers_cs1e9 -ci0 -cx1000000000
+file2 = data/C04816/C265T04816D_frfr_N295-451/germline_kmers_cs1e9 -ci0 -cx1000000000
+file3 = data/C04837/C110T04837D_frfr_N295-452/germline_kmers_cs1e9 -ci0 -cx1000000000
+file4 = data/C04849/C93T04849D_frfr_N295-453/germline_kmers_cs1e9 -ci0 -cx000000000
+file5 = data/C04873/C77T04873D_frfr_N295-454/germline_kmers_cs1e9 -ci0 -cx1000000000
+file6 = data/C04874/C82T04874D_frfr_N295-455/germline_kmers_cs1e9 -ci0 -cx1000000000
+file7 = data/C04886/C111T04886D_frfr_N295-456/germline_kmers_cs1e9 -ci0 -cx1000000000
+file8 = data/C04887/C94T04887D_frfr_N295-457/germline_kmers_cs1e9 -ci0 -cx1000000000
+file9 = data/C05048/C74T05048D_frfr_N295-458/germline_kmers_cs1e9 -ci0 -cx1000000000
+file10 = data/C05073/C59T05073D_frfr_N295-459/germline_kmers_cs1e9 -ci0 -cx1000000000
+file11 = data/C05084/C71T05084D_frfr_N295-460/germline_kmers_cs1e9 -ci0 -cx1000000000
+file12 = data/C05118/C146T05118D_frfr_N295-461/germline_kmers_cs1e9 -ci0 -cx1000000000
+file13 = data/C05194/C127T05194D_frfr_N295-462/germline_kmers_cs1e9 -ci0 -cx1000000000
+file14 = data/C05194/C127T05194D_frfr_N295-462/germline_kmers_cs1e9 -ci0 -cx1000000000
+file15 = data/C05703/C76T05703D_frfr_N295-464/germline_kmers_cs1e9 -ci0 -cx1000000000
+
+OUTPUT: 
+union_germline = file1 + file2 + file3 + file4 + file5 + file6 + file7 + file8 + file9 + file10 + file11 + file12 + file13 + file 14 + file 15
+
+OUTPUT_PARAMS:
+-ci0 -cs100000000 -ci1000000000
+

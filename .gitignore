@@ -1,0 +1,17 @@
+results_phaseI.csv
+Rplots.pdf
+/data
+/Example
+/logs
+/Logs
+/plotting_results
+/tmp
+/tmp_cfDNA
+/tmp_cfDNA_cs1e9
+/tmp_cfDNA_tumor_ci4_removed_cs1e9
+/tmp_cfDNA_tumor_singletons_removed_cs1e9
+/tmp_normal
+/tmp_tumor
+/tmp_union
+/Trash
+.snakemake
