@@ -90,7 +90,7 @@ rule subtract_tumor_germline_all_germline_filtered_bams_tumor_ci5_cs1e9:
     conda: 
         "envs/ctDNA.yml"
     shell:
-        "kmc_tools simple data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/tumor_kmers -ci5 -cx1000000000 data/{wildcards.pt}/{wildcards.output_f}/germline_union -ci0 -cx1000000000 kmers_subtract data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers -ci0 -cx1000000000 -cs1000000000"
+        "kmc_tools simple data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/tumor_kmers -ci5 -cx1000000000 data/germline_union -ci0 -cx1000000000 kmers_subtract data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers -ci0 -cx1000000000 -cs1000000000"
         #"kmc_scripts/kmers_subtract.py"
         #we can put -ci and -cx here for each input as well, and also for the output
         #there are several options for the counters, see kmc_tools simple --help. They can be defined with -oc, and I think what we want is -ocleft (take the counts from the left data base, so the tumor?)

@@ -40,6 +40,9 @@ rule correlation_dump:
     shell: "kmc_tools transform data/{wildcards.pt}/{wildcards.output_f}/ci5_cs1e9/unique_tumor_kmers_in_cfDNA -ci0 -cx1000000000 dump data/{wildcards.pt}/{wildcards.output_f}/ci5_cs1e9/intersection_unique_tumor_cfDNAintersection.txt -ci0 -cx1000000000"
     
 
+####ATTENTION: if the input is changed, it has to be changed in the script from the following rule as well since it is hardcoded here!!
+
+
 rule correlation_merge_and_calculate_correlation:
     input: 
         input_dump = OUTPUT_DUMP
