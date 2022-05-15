@@ -43,8 +43,8 @@ def other_pt_folder_lists(wildcards):
     
     output_list = []
     for index, (other_pt, other_fd) in enumerate(zip(other_patients, other_folders)):
-        if index != len(other_patients) -1: 
-            output_list.append((other_pt, other_fd, f"data/{patient}/{output_folder}/all_germline_filtered_bams_tumor_subtract_other_tumor_ci5_cs1e9/unique_tumor_kmers_substractions/unique_tumor_kmers_subtracted_{index}"))
+        if index != len(other_patients) -1: #unique_tumor_kmers_substractions
+            output_list.append((other_pt, other_fd, f"data/{patient}/{output_folder}/all_germline_filtered_bams_tumor_subtract_other_tumor_ci5_cs1e9/unique_tumor_kmers_subtracted_{index}"))
         else: 
             output_list.append((other_pt, other_fd, f"data/{patient}/{output_folder}/all_germline_filtered_bams_tumor_subtract_other_tumor_ci5_cs1e9/unique_tumor_kmers_subtracted_final"))
     return output_list    
@@ -82,6 +82,9 @@ rule make_plotfile_unique_tumor_all_germline_filtered_tumor_bams_subtract_other_
         kmers_pre = "data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_subtract_other_tumor_ci5_cs1e9/unique_tumor_kmers_subtracted_final.kmc_pre"
     output: 
         plotdata = "data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_subtract_other_tumor_ci5_cs1e9/plotdata_unique_tumor_kmers.txt"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
     conda:
         "envs/ctDNA.yml"
     shell: 
@@ -94,6 +97,9 @@ rule filter_plotfile_unique_tumor_all_germline_filtered_tumor_bams_subtract_othe
         plotdata = "data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_subtract_other_tumor_ci5_cs1e9/plotdata_unique_tumor_kmers.txt"
     output: 
         plotdata_filtered = "data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_subtract_other_tumor_ci5_cs1e9/plotdata_unique_tumor_kmers_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "2:00:00"
     conda:
         "envs/ctDNA.yml"
     shell: 
@@ -104,6 +110,9 @@ rule make_plot_unique_tumor_all_germline_filtered_tumor_bams_subtract_other_tumo
         input_filename = "data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_subtract_other_tumor_ci5_cs1e9/plotdata_unique_tumor_kmers_filtered.txt"
     output: 
         output_filename = "data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_subtract_other_tumor_ci5_cs1e9/histogram_unique_tumor_kmers.png"
+    resources: 
+        mem_mb = 5000, 
+        time = "1:00:00"
     conda: 
         "envs/ctDNA.yml"
     script:

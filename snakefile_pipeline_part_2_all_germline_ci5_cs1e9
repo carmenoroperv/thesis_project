@@ -16,6 +16,7 @@ DUMP_INTERSECTION = expand("data/{pt_dump_int}/{output_f_dump_int}/all_germline_
 
 RATIOS = expand("data/{pt}/{output_f}/all_germline_ci5_cs1e9/big_ratio_all_germline_singletons_excluded_tumor_4_cs.csv" , zip, pt = SAMPLES, output_f = FOLDERS)
 SMALL_RATIOS = expand("data/{pt}/{output_f}/all_germline_ci5_cs1e9/small_ratio_all_germline_singletons_excluded_tumor_4_cs.csv" , zip, pt = SAMPLES, output_f = FOLDERS)
+UPPER_RATIO = expand("data/{pt}/{output_f}/all_germline_ci5_cs1e9/big_upper_ratio_all_germline_singletons_excluded_tumor_4_cs.csv", zip, pt = SAMPLES, output_f = FOLDERS)
 
 
 for pt, fd in zip(SAMPLES, FOLDERS):
@@ -27,7 +28,7 @@ for pt, fd in zip(SAMPLES, FOLDERS):
 
 
 rule all: 
-    input: HISTOGRAM_INTERSECTION, DUMP_INTERSECTION, RATIOS, SMALL_RATIOS
+    input: HISTOGRAM_INTERSECTION, DUMP_INTERSECTION, RATIOS, SMALL_RATIOS, UPPER_RATIO
 #OUTPUT_cfDNA_KMERS, 
 
 
@@ -114,6 +115,21 @@ rule all_germline_high_cs_exclude_singletons_tumor_calculate_big_ratio:
         "calculate_ratio.R"
 
 
+rule all_germline_high_cs_exclude_singletons_tumor_calculate_upper_big_ratio:
+    input: 
+        intersection = "data/{pt}/{output_f}/all_germline_ci5_cs1e9/plotdata_intersection_singletons_all_germline_excluded_tumor_4_cs.txt",
+        all_cfDNA = "data/{pt}/{output_f}/cs1e9/plotdata_cfDNA_cs1e9.txt",
+        unique_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/all_germline_ci5_cs1e9/plotdata_unique_tumor_all_germline_singletons_excluded_tumor_4_cs.txt"),
+        all_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/ci5_cs1e9/plotdata_tumor_singletons_excluded_tumor_4_cs.txt")
+    output: 
+        ratio = "data/{pt}/{output_f}/all_germline_ci5_cs1e9/big_upper_ratio_all_germline_singletons_excluded_tumor_4_cs.csv" #This should be a csv with just one position where it saves the ratio for the specific sample
+    conda: 
+        "envs/r4base.yml"
+    script:
+        "calculate_ratio_upper.R"
+        
+        
+        
 rule all_germline_high_cs_exclude_singletons_tumor_calculate_small_ratio:
     input: 
         intersection = "data/{pt}/{output_f}/all_germline_ci5_cs1e9/plotdata_intersection_singletons_all_germline_excluded_tumor_4_cs.txt",

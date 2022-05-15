@@ -1,0 +1,69 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseI.csv", index_col='pt_id')
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+OUTPUT_UNIQUE_SUBSTRACTED = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted/unique_tumor_kmers.kmc_pre", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+
+UNIQUE_PLOTDATA_FILTERED = expand("data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted/plotdata_unique_tumor_kmers_filtered.txt", zip, pt_unique_plot=SAMPLES, output_f_unique_plot = OUTPUT_PT_FOLDER)
+
+
+rule all: 
+    input:  OUTPUT_UNIQUE_SUBSTRACTED,  UNIQUE_PLOTDATA_FILTERED
+
+####INTERSECTION####
+
+rule subtract_unique_tumor_well_mapping_all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted:
+    input:
+        unique_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers.kmc_pre",
+        unique_suf = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers.kmc_suf",
+        well_mapping_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches.kmc_pre",
+        well_mapping_suf = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches.kmc_suf"
+    output: 
+        unique_tumor_kmers_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted/unique_tumor_kmers.kmc_pre",
+        unique_tumor_kmers_suf = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted/unique_tumor_kmers.kmc_suf"
+    resources: 
+        mem_mb = 300000, 
+        time = "6:00:00"
+    threads: 1
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        "kmc_tools simple data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers -ci5 -cx1000000000 data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches -ci0 -cx1000000000 kmers_subtract data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted/unique_tumor_kmers -ci0 -cx1000000000 -cs1000000000"
+        #"kmc_scripts/kmers_subtract.py"
+        #we can put -ci and -cx here for each input as well, and also for the output
+        #there are several options for the counters, see kmc_tools simple --help. They can be defined with -oc, and I think what we want is -ocleft (take the counts from the left data base, so the tumor?)
+
+        
+####PLOTS###########
+rule make_plotfile_unique_tumor_all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted:
+    input: 
+        kmers_pre = "data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted/unique_tumor_kmers.kmc_pre",
+        kmers_suf = "data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted/unique_tumor_kmers.kmc_suf"
+    output: 
+        plotdata = "data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted/plotdata_unique_tumor_kmers.txt"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/{wildcards.pt_unique_plot}/{wildcards.output_f_unique_plot}/all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted/unique_tumor_kmers -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+        #"kmc_scripts/kmers_transform.py"
+
+
+rule filter_plotfile_unique_tumor_all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted:
+    input:
+        plotdata = "data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted/plotdata_unique_tumor_kmers.txt"
+    output: 
+        plotdata_filtered = "data/{pt_unique_plot}/{output_f_unique_plot}/all_germline_filtered_bams_tumor_ci5_cs1e9_well_mapping_subtracted/plotdata_unique_tumor_kmers_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"

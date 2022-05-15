@@ -15,7 +15,7 @@ FOLDERS = paramspace.index
 OUTPUT_cfDNA_KMERS = expand("data/{pt_cfdna_count}/{output_f_cfdna_count}/cs1e9/cfDNA_kmers_cs1e9.kmc_pre", zip, pt_cfdna_count = SAMPLES, output_f_cfdna_count = FOLDERS)
 HISTOGRAM_INTERSECTION = expand("data/{pt_hist}/{output_f_hist}/cs1e9/histogram_intersection_cs1e9.png", zip, pt_hist = SAMPLES, output_f_hist = FOLDERS)
 DUMP_INTERSECTION = expand("data/{pt_dump_int}/{output_f_dump_int}/cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect_cs1e9.txt", zip, pt_dump_int = SAMPLES, output_f_dump_int = FOLDERS)
-
+FILTERED_CFDNA = expand("data/{pt_filtered}/{output_f_filtered}/cs1e9/plotdata_cfDNA_cs1e9_filtered.txt", zip, pt_filtered = SAMPLES, output_f_filtered = FOLDERS)
 #use the folder as a wildcard name? 
 # we need all folder that have cfDNA from each patient folder, then cd into that and get the bam file
 #They have given the file the same name in each folder for the same patient
@@ -31,7 +31,7 @@ for pt, fd in zip(SAMPLES, FOLDERS):
     Path(output_folder).mkdir(parents=True, exist_ok=True)
 
 rule all: 
-    input: OUTPUT_cfDNA_KMERS, HISTOGRAM_INTERSECTION, DUMP_INTERSECTION, RATIOS, SMALL_RATIOS
+    input: OUTPUT_cfDNA_KMERS, HISTOGRAM_INTERSECTION, DUMP_INTERSECTION, RATIOS, SMALL_RATIOS, FILTERED_CFDNA
 
 
 #RATIOS
@@ -65,7 +65,19 @@ rule make_plotfile_cfDNA_cs1e9:
     shell: 
         'kmc_tools transform data/{wildcards.pt}/{wildcards.output_f}/cs1e9/cfDNA_kmers_cs1e9 -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000'
         
-        
+
+rule filter_plotfile_cfDNA_cs1e9:
+    input:
+        plotdata = "data/{pt_filtered}/{output_f_filtered}/cs1e9/plotdata_cfDNA_cs1e9.txt"
+    output: 
+        plotdata_filtered = "data/{pt_filtered}/{output_f_filtered}/cs1e9/plotdata_cfDNA_cs1e9_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"    
 
 ###INTERSECT WITH UNIQUE TUMOR K-MERS##
 rule intersect_cfDNA_unique_tumor_cs1e9:

@@ -1,0 +1,44 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+
+paramspace = pd.read_csv("data/metadata/paramspace_cfDNA_phaseI.csv", index_col='cfDNA_folder')
+BAM_FILES = paramspace["cfDNA_bam_path"]
+
+SAMPLES = paramspace["pt_id"]
+OUTPUT_PT_FOLDER = paramspace.index
+
+QUALITIES = expand("data/{pt}/{output_f}/cfDNA_bam_base_qualities.csv", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+OUTPUT_FILTERED_cfDNA = expand("data/{pt}/{output_f}/cfDNA_reads_filtered_maxquality_based.bam", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+
+rule all: 
+    input:  QUALITIES, OUTPUT_FILTERED_cfDNA
+
+
+rule get_base_qualities_cfDNA:
+    input:
+        bam_file = lambda wildcards: str(Path(BAM_FILES[wildcards.output_f]))
+    output: 
+        qualities = "data/{pt}/{output_f}/cfDNA_bam_base_qualities.csv"
+    resources: 
+        mem_mb = 150000, 
+        time = "33:00:00"
+    conda: 
+        "envs/ctDNA_pysam.yml"
+    script:
+        "scripts_utils/find_bam_max_quality.py"   
+    
+rule filter_cfDNA_bams:
+    input:
+        bam_file = lambda wildcards: str(Path(BAM_FILES[wildcards.output_f])),
+        qualities_file = "data/{pt}/{output_f}/cfDNA_bam_base_qualities.csv"
+    output: 
+        filtered_bam_file = "data/{pt}/{output_f}/cfDNA_reads_filtered_maxquality_based.bam"
+    resources: 
+        mem_mb = 150000, 
+        time = "33:00:00"
+    conda: 
+        "envs/ctDNA_pysam.yml"
+    script:
+        "scripts_utils/filtering_tumor_bam_maxquality_only.py"

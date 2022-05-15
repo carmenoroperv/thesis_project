@@ -1,0 +1,124 @@
+import pandas as pd
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseI.csv", index_col='pt_id')
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+OUTPUT = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.sorted.bam", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+INDEX = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.sorted.index.bam", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+UNMAPPED_OUTPUT = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers_unmapped.sam", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+NOHEADER_SAM = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers_no_header.sam", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+
+MAPPED_OUTPUT = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers_mapped.sam", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+
+rule all: 
+    input: OUTPUT, INDEX, UNMAPPED_OUTPUT, MAPPED_OUTPUT
+    
+rule dump_unique_set_all_germline_filtered_tumor_ci5_cs1e9: 
+    input:
+        unique_kmers = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers.kmc_pre"
+    output: 
+        unique_kmer_dump = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers_dump.txt"
+    threads: 1
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        "kmc_tools transform data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers -ci0 -cx1000000000 dump data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers_dump.txt -ci0 -cx1000000000 -cs1000000000"
+    
+    
+rule create_fasta_files_all_germline_filtered_tumor_ci5_cs1e9: 
+    input:
+        kmer_dump = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers_dump.txt",
+    output: 
+        fasta = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.fa"
+    threads: 1
+    conda: 
+        "envs/ctDNA.yml"
+    script:
+        "mapping_to_reference/create_fasta_file.py" 
+
+        
+rule map_to_reference_all_germline_filtered_tumor_ci5_cs1e9:
+    input:
+        fasta_file = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.fa",
+        index_file = "../../../MomaReference/BACKUP/hg38/software_indexes/bwa/GCA_000001405.15_GRCh38_no_alt_analysis_set.GRC_exclusions_masked.fna"
+    output: 
+        sam = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.sam"
+    threads: 1
+    conda: 
+        "envs/ctDNA_bwa.yml"
+    shell:
+        "bwa mem {input.index_file} {input.fasta_file} > {output.sam}" 
+
+        
+
+rule create_bam_all_germline_filtered_tumor_ci5_cs1e9:
+    input:
+        sam_file = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.sam"
+    output: 
+        bam_file = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.bam"
+    threads: 1
+    conda: 
+        "envs/conda_samtools.yml"
+    shell:
+        "samtools view -S -b {input.sam_file} > {output.bam_file}"
+        
+
+rule sort_bam_all_germline_filtered_tumor_ci5_cs1e9:
+    input:
+        bam_file = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.bam"
+    output: 
+        sorted_bam_file = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.sorted.bam"
+    threads: 1
+    conda: 
+        "envs/conda_samtools.yml"
+    shell:
+        "samtools sort {input.bam_file} -o {output.sorted_bam_file}"
+        
+    
+rule index_bam_all_germline_filtered_tumor_ci5_cs1e9:
+    input:
+        bam_file = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.sorted.bam"
+    output: 
+        bam_file_index = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.sorted.index.bam"
+    threads: 1
+    conda: 
+        "envs/conda_samtools.yml"
+    shell:
+        "samtools index {input.bam_file} > {output.bam_file_index}"
+    
+
+rule get_unmapped_all_germline_filtered_tumor_ci5_cs1e9:
+    input:
+        bam_file = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.sorted.bam"
+    output: 
+        unmapped_sam = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers_unmapped.sam"
+    threads: 1
+    conda: 
+        "envs/conda_samtools.yml"
+    shell:
+        "samtools view -f 4 {input.bam_file} > {output.unmapped_sam}"
+        
+
+rule get_mapped_all_germline_filtered_tumor_ci5_cs1e9:
+    input:
+        bam_file = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.sorted.bam"
+    output: 
+        mapped_sam = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers_mapped.sam"
+    threads: 1
+    conda: 
+        "envs/conda_samtools.yml"
+    shell:
+        "samtools view -F 4 {input.bam_file} > {output.mapped_sam}"
+
+rule remove_header_from_sam_all_germline_filtered_tumor_ci5_cs1e9:
+    input:
+        sam_file = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers.sam"
+    output: 
+        noheader_sam = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unique_tumor_kmers_no_header.sam"
+    threads: 1
+    conda: 
+        "envs/conda_samtools.yml"
+    shell:
+        "grep -v '^@' {input.sam_file} > {output.noheader_sam}"
+        

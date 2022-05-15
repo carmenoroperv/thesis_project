@@ -21,7 +21,7 @@ DUMP_INTERSECTION = expand("data/{pt_dump_int}/{output_f_dump_int}/all_germline_
 #They have given the file the same name in each folder for the same patient
 RATIOS = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/big_ratio.csv", zip, pt = SAMPLES, output_f = FOLDERS)
 SMALL_RATIOS = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/small_ratio.csv", zip, pt = SAMPLES, output_f = FOLDERS)
-
+UPPER_RATIOS = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/big_upper_ratio.csv", zip, pt = SAMPLES, output_f = FOLDERS)
 
 for pt, fd in zip(SAMPLES, FOLDERS):
     tmp_folder = "tmp_cfDNA/tmp_cfDNA_" + str(pt) + "/" + str(fd)  + "_filtered_bams_tumor_ci4_cs1e9/"
@@ -32,7 +32,7 @@ for pt, fd in zip(SAMPLES, FOLDERS):
 
 
 rule all: 
-    input: HISTOGRAM_INTERSECTION, DUMP_INTERSECTION, RATIOS, SMALL_RATIOS
+    input: HISTOGRAM_INTERSECTION, DUMP_INTERSECTION, RATIOS, SMALL_RATIOS, UPPER_RATIOS
 #OUTPUT_cfDNA_KMERS, 
 
 #RATIOS
@@ -76,6 +76,9 @@ rule intersect_cfDNA_unique_tumor_all_germline_filtered_bams_tumor_ci5_cs1e9:
     output: 
         intersections_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_pre", 
         intersections_suf = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_suf"
+    resources: 
+        mem_mb = 100000, 
+        time = "5:00:00"
     params: 
         unique_tumor_kmers_file = lambda wildcards: str("data/" + str(wildcards.pt) + "/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) +  "/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers")
     conda: 
@@ -91,6 +94,9 @@ rule make_plotfile_intersection_all_germline_filtered_bams_tumor_ci5_cs1e9:
         intersection_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_pre"
     output: 
         plotdata = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_intersection.txt"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
     conda:
         "envs/ctDNA.yml"
     shell: 
@@ -102,6 +108,9 @@ rule filter_plotfile_intersection_all_germline_filtered_bams_tumor_ci5_cs1e9:
         plotdata = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_intersection.txt"
     output: 
         plotdata_filtered = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_intersection_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "2:00:00"
     conda:
         "envs/ctDNA.yml"
     shell: 
@@ -112,6 +121,9 @@ rule make_plot_intersection_all_germline_filtered_bams_tumor_ci5_cs1e9:
         input_filename = "data/{pt_hist}/{output_f_hist}/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_intersection_filtered.txt"
     output: 
         output_filename = "data/{pt_hist}/{output_f_hist}/all_germline_filtered_bams_tumor_ci5_cs1e9/histogram_intersection.png"
+    resources: 
+        mem_mb = 5000, 
+        time = "1:00:00"
     conda: 
         "envs/ctDNA.yml"
     script:
@@ -123,6 +135,9 @@ rule dump_intersection_all_germline_filtered_bams_tumor_ci5_cs1e9:
         intersections_suf = "data/{pt_dump_int}/{output_f_dump_int}/all_germline_filtered_bams_tumor_ci5_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_suf"
     output: 
         plotdata = "data/{pt_dump_int}/{output_f_dump_int}/all_germline_filtered_bams_tumor_ci5_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.txt"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
     conda:
         "envs/ctDNA.yml"
     shell: 
@@ -139,19 +154,42 @@ rule calculate_big_ratio_all_germline_filtered_bams_tumor_ci5_cs1e9:
         unique_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_unique_tumor_kmers_filtered.txt"),
         all_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_tumor_filtered.txt")
     output: 
-        ratio = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/big_ratio.csv" #This should be a csv with just one position where it saves the ratio for the specific sample
+        ratio = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/big_ratio.csv"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
     conda: 
         "envs/r4base.yml"
     script:
         "calculate_ratio.R"
 
 
+rule calculate_big_upper_ratio_all_germline_filtered_bams_tumor_ci5_cs1e9:
+    input: 
+        intersection = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_intersection_filtered.txt",
+        all_cfDNA = "data/{pt}/{output_f}/cs1e9/plotdata_cfDNA_cs1e9.txt",
+        unique_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_unique_tumor_kmers_filtered.txt"),
+        all_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_tumor_filtered.txt")
+    output: 
+        ratio = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/big_upper_ratio.csv"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
+    conda: 
+        "envs/r4base.yml"
+    script:
+        "calculate_ratio_upper.R"
+        
+        
 rule calculate_small_ratio_all_germline_filtered_bams_tumor_ci5_cs1e9:
     input: 
         intersection = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_intersection_filtered.txt",
         unique_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_unique_tumor_kmers_filtered.txt")
     output: 
-        ratio = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/small_ratio.csv" #This should be a csv with just one position where it saves the ratio for the specific sample
+        ratio = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/small_ratio.csv"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
     conda: 
         "envs/ctDNA.yml"
     script:

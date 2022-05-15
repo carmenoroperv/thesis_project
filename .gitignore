@@ -16,3 +16,9 @@ Rplots.pdf
 /Trash
 .snakemake
 /mapping_to_reference/test_fasta.fa
+Complex_union
+Project_synopsis.txt
+sample_C04816_problems
+/scripts_plotting/plot_total_number_of_kmers_across_pipelines.ipynb
+/mapping_to_reference/test_fasta.fa
+/mapping_to_reference/test_sam.sam

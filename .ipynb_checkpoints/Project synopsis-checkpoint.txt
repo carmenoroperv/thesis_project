@@ -1,0 +1,26 @@
+Project: A reference-free strategy for detecting circulating tumor DNA
+
+Supervision/study group:
+Claus Lindbjerg Andersen cla@clin.au.dk
+Søren Besenbacher besenbacher@clin.au.dk
+Lasse Maretty Sørensen lasse.maretty@clin.au.dk
+
+Contact information: 
+Carmen Oroperv caor@clin.au.dk 50109278
+Anika Gottschalk ango@clin.au.dk 60533536
+
+Aim and hypothesis: 
+The aim of this masters thesis project is to study if tumor specific structural variants can be identified in a reference-free approach and used to estimate the level of circulating tumor DNA in follow-up cell-free DNA samples accurately enough so that relapse can be predicted as early as possible, ideally before imaging-based methods can. 
+The hypothesis behind this aim is that, with a small tumor fraction, point mutations will be close to the frequency of sequencing errors, and clustered point mutations and structural variants can be more reliable biomarkers in these cases, improving the detection limit of circulating tumor DNA. This will be tested by creating a set of k-mers that are unique to each patients tumor and not seen in the germline.  
+
+Short description of the analytical plan:
+In the first step, unique tumor k-mers are identified by subtracting germline k-mers from tumor k-mers for each individual.  Subsequently, these k-mers are searched for in the cfDNA samples of the corresponding patient. The tumor fraction is estimated based on the number of unique tumor k-mers that are found in each ctDNA sample. These k-mers possibly represent structural variants such as deletions or insertions, or clustered point mutations. 
+It is expected that the tumor fraction estimate decreases after the surgery and chemotherapy, while an increase is expected before eventual relapse, if it occurs. 
+The unique tumor k-mers are mapped back to the human genome with the goal of identifying the variants they might represent. To decrease the number of unique tumor k-mers found for each patient and filter out low quality data, different filtering approaches are included in the pipeline. These approaches include setting a lower boundary on the k-mer count in the tumor, quality filtering the tumor reads based on Phred-quality scores and creating a union of all patient germline k-mer sets that is subsequently used to remove germline k-mers from the individual tumor k-mer sets. 
+
+Data sets used: 
+In the first phase of our project, we will only train the models in phase I patients. Phase II patients will be used as a test set in the end of the project to evalutate if the models can predict relapse. 
+The germline, tumor and cfDNA bam files from these patients are used in the analyses. 
+
+This project is carried out in the following time frame: 01.02.2022 – 15.06.2022. 
+

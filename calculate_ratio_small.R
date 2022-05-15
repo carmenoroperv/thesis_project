@@ -29,6 +29,6 @@ print(binom_test$conf.int[1])
 print("upperCI")
 print(binom_test$conf.int[2])
 
-res = tibble(ratio = ratio, lower_CI = binom_test$conf.int[1], upper_CI = binom_test$conf.int[2])
+res = tibble(ratio = ratio, lower_CI = binom_test$conf.int[1], upper_CI = binom_test$conf.int[2], intersection_sum_small = intersection_sum, unique_tumor_sum_small = unique_tumor_sum)
 
 write.csv(res, snakemake@output[["ratio"]], row.names = FALSE)

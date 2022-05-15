@@ -17,11 +17,13 @@ print(INDEX)
 
 INTERSECTION_PRE = expand("data/{pt}/ratio_emp_dist_analysis_ci4_cs1e9/intersection_files/cfDNA_kmers_PT_{other_pt}_SAMPLE_{cfDNA_sample}_unique_tumor_kmers_intersect_{index}.kmc_pre", zip, pt = PATIENTS, other_pt = OTHER_PATIENTS, cfDNA_sample = CFDNA_FOLDERS, index = INDEX)
 PLOTDATA_INTERSECTION = expand("data/{pt}/ratio_emp_dist_analysis_ci4_cs1e9/plotdata_files/plotdata_intersection_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}.txt", zip, pt = PATIENTS, other_pt = OTHER_PATIENTS, cfDNA_sample = CFDNA_FOLDERS, index = INDEX)
+PLOTDATA_FILTERED = expand("data/{pt}/ratio_emp_dist_analysis_ci4_cs1e9/plotdata_files_filtered/plotdata_intersection_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}_filtered.txt", zip, pt = PATIENTS, other_pt = OTHER_PATIENTS, cfDNA_sample = CFDNA_FOLDERS, index = INDEX)
 RATIOS = expand("data/{pt}/ratio_emp_dist_analysis_ci4_cs1e9/ratios/big_ratio_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}.csv" , zip, pt = PATIENTS, other_pt = OTHER_PATIENTS, cfDNA_sample = CFDNA_FOLDERS, index = INDEX)
-
+SMALL_RATIOS = expand("data/{pt}/ratio_emp_dist_analysis_ci4_cs1e9/small_ratios/small_ratio_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}.csv" , zip, pt = PATIENTS, other_pt = OTHER_PATIENTS, cfDNA_sample = CFDNA_FOLDERS, index = INDEX)
 
 rule all: 
-    input: INTERSECTION_PRE, PLOTDATA_INTERSECTION, RATIOS
+    input: INTERSECTION_PRE, PLOTDATA_INTERSECTION, RATIOS, SMALL_RATIOS, PLOTDATA_FILTERED
+
 
 rule emp_dist_analysis_intersect_cfDNA_unique_tumor_ci4_cs1e9:
     input:
@@ -48,6 +50,20 @@ rule emp_dist_analysis_make_plotfile_intersection_ci4_cs1e9:
         "envs/ctDNA.yml"
     shell: 
         "kmc_tools transform data/{wildcards.pt}/ratio_emp_dist_analysis_ci4_cs1e9/intersection_files/cfDNA_kmers_PT_{wildcards.other_pt}_SAMPLE_{wildcards.cfDNA_sample}_unique_tumor_kmers_intersect_{wildcards.index} -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+        
+
+rule emp_dist_analysis_filter_plotfile_intersection_ci4_cs1e9:
+    input: 
+        plotdata = "data/{pt}/ratio_emp_dist_analysis_ci4_cs1e9/plotdata_files/plotdata_intersection_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}.txt"
+    output: 
+        plotdata_filtered = "data/{pt}/ratio_emp_dist_analysis_ci4_cs1e9/plotdata_files_filtered/plotdata_intersection_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
 
 
 rule emp_dist_analysis_calculate_big_ratio_ci4_cs1e9:
@@ -62,3 +78,14 @@ rule emp_dist_analysis_calculate_big_ratio_ci4_cs1e9:
         "envs/r4base.yml"
     script:
         "calculate_ratio.R"
+
+rule emp_dist_analysis_calculate_small_ratio_ci4_cs1e9:
+    input: 
+        intersection = "data/{pt}/ratio_emp_dist_analysis_ci4_cs1e9/plotdata_files/plotdata_intersection_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}.txt",
+        unique_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[int(wildcards.index)])) + "/ci5_cs1e9/plotdata_unique_tumor_singletons_excluded_tumor_4_cs_filtered.txt")
+    output: 
+        ratio = "data/{pt}/ratio_emp_dist_analysis_ci4_cs1e9/small_ratios/small_ratio_pt_{other_pt}_cfDNAsample_{cfDNA_sample}_{index}.csv" #This should be a csv with just one position where it saves the ratio for the specific sample
+    conda: 
+        "envs/r4base.yml"
+    script:
+        "calculate_ratio_small.R"

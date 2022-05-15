@@ -33,11 +33,10 @@ for pt, fd in zip(SAMPLES, OUTPUT_PT_FOLDER):
 
 rule all: 
     input:  OUTPUT_TUMOR,  OUTPUT_UNIQUE, TUMOR_HISTOGRAM, UNIQUE_HISTOGRAM
-    #OUTPUT_GERMLINE,  GERMLINE_HISTOGRAM,
 
 ####COUNT TUMOR#####
 
-rule high_cs_exclude_singletons_tumor_count_tumor:
+rule high_cs_ci5_tumor_count_tumor:
     input:
         bam_file = lambda wildcards: str(Path(TUMOR_FILES[wildcards.pt_tumor]))
     output: 
@@ -74,7 +73,7 @@ rule high_cs_exclude_singletons_tumor_count_tumor:
 
 ####INTERSECTION####
 
-rule high_cs_exclude_singletons_tumor_subtract_tumor_germline:
+rule high_cs_ci5_tumor_subtract_tumor_germline:
     input:
         tumor_pre = "data/{pt}/{output_f}/ci5_cs1e9/tumor_kmers_singletons_excluded_tumor_4_cs.kmc_pre",
         tumor_suf = "data/{pt}/{output_f}/ci5_cs1e9/tumor_kmers_singletons_excluded_tumor_4_cs.kmc_suf",
@@ -98,7 +97,7 @@ rule high_cs_exclude_singletons_tumor_subtract_tumor_germline:
 
 
 ####PLOTS###########
-rule high_cs_exclude_singletons_tumor_make_plotfile_tumor:
+rule high_cs_ci5_tumor_make_plotfile_tumor:
     input: 
         kmers_pre = "data/{pt_tumor_plot}/{output_f_tumor_plot}/ci5_cs1e9/tumor_kmers_singletons_excluded_tumor_4_cs.kmc_pre", 
         kmers_suf = "data/{pt_tumor_plot}/{output_f_tumor_plot}/ci5_cs1e9/tumor_kmers_singletons_excluded_tumor_4_cs.kmc_suf"
@@ -111,7 +110,7 @@ rule high_cs_exclude_singletons_tumor_make_plotfile_tumor:
         #"kmc_scripts/kmers_transform.py"
 
 
-rule high_cs_exclude_singletons_tumor_filter_plotfile_tumor:
+rule high_cs_ci5_tumor_filter_plotfile_tumor:
     input:
         plotdata = "data/{pt_tumor_plot}/{output_f_tumor_plot}/ci5_cs1e9/plotdata_tumor_singletons_excluded_tumor_4_cs.txt"
     output: 
@@ -121,7 +120,7 @@ rule high_cs_exclude_singletons_tumor_filter_plotfile_tumor:
     shell: 
         "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
 
-rule high_cs_exclude_singletons_tumor_make_plot_tumor:
+rule high_cs_ci5_tumor_make_plot_tumor:
     input: 
         input_filename = "data/{pt_tumor_plot}/{output_f_tumor_plot}/ci5_cs1e9/plotdata_tumor_singletons_excluded_tumor_4_cs_filtered.txt"
     output: 
@@ -157,7 +156,7 @@ rule high_cs_exclude_singletons_tumor_make_plot_tumor:
 #        "histogram_plots.R"
 
 ####PLOTS###########
-rule high_cs_exclude_singletons_tumor_make_plotfile_unique_tumor:
+rule high_cs_ci5_tumor_make_plotfile_unique_tumor:
     input: 
         kmers_pre = "data/{pt_unique_plot}/{output_f_unique_plot}/ci5_cs1e9/unique_tumor_kmers_singletons_excluded_tumor_4_cs.kmc_pre",
         kmers_suf = "data/{pt_unique_plot}/{output_f_unique_plot}/ci5_cs1e9/unique_tumor_kmers_singletons_excluded_tumor_4_cs.kmc_suf"
@@ -170,7 +169,7 @@ rule high_cs_exclude_singletons_tumor_make_plotfile_unique_tumor:
         #"kmc_scripts/kmers_transform.py"
 
 
-rule high_cs_exclude_singletons_tumor_filter_plotfile_unique_tumor:
+rule high_cs_ci5_tumor_filter_plotfile_unique_tumor:
     input:
         plotdata = "data/{pt_unique_plot}/{output_f_unique_plot}/ci5_cs1e9/plotdata_unique_tumor_singletons_excluded_tumor_4_cs.txt"
     output: 
@@ -180,7 +179,7 @@ rule high_cs_exclude_singletons_tumor_filter_plotfile_unique_tumor:
     shell: 
         "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
 
-rule high_cs_exclude_singletons_tumor_make_plot:
+rule high_cs_ci5_tumor_make_plot:
     input: 
         input_filename = "data/{pt_unique_plot}/{output_f_unique_plot}/ci5_cs1e9/plotdata_unique_tumor_singletons_excluded_tumor_4_cs_filtered.txt"
     output: 

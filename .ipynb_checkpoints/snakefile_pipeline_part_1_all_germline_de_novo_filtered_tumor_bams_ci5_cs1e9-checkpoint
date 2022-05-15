@@ -1,0 +1,100 @@
+#Description: this file will take as input the raw patient data and make the k-mer count for both the tumor and the germline for each patient. Then it will subtract it, so that we have the unique k-mers that are only in the cancer for each patients and save those. 
+#This file will exclude singletons from the beginning,  excluding kmers that are 4 or fewer (ci5) from the tumor (but do not exclude them from germline)
+
+
+import pandas as pd
+from pathlib import Path
+import os
+
+####MAKE THE TMP FOLDER WITH WILDCARD NAME!
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseI.csv", index_col='pt_id')
+TUMOR_FILES = paramspace["tumor_bam_path"]
+GERMLINE_FILES = paramspace["germline_bam_path"]
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+OUTPUT_UNIQUE = expand("data/{pt}/{output_f}/de_novo_germline/unique_tumor_kmers.kmc_pre", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+
+UNIQUE_PLOTDATA_FILTERED = expand("data/{pt_unique_plot}/{output_f_unique_plot}/de_novo_germline/plotdata_unique_tumor_kmers_filtered.txt", zip, pt_unique_plot=SAMPLES, output_f_unique_plot = OUTPUT_PT_FOLDER)
+
+
+
+
+for pt, fd in zip(SAMPLES, OUTPUT_PT_FOLDER):
+    tmp_folder_tumor = "tmp_tumor/tmp_tumor_" + str(pt) + "/" + str(fd)  + "_filtered_bams_tumor_ci4_cs1e9/"
+    Path(tmp_folder_tumor).mkdir(parents=True, exist_ok=True)
+    
+    #tmp_folder_healthy = "tmp_normal/tmp_normal_" + str(pt) + "/" + str(fd)  + "_filtered_bams_tumor_ci4_cs1e9/"
+    #Path(tmp_folder_healthy).mkdir(parents=True, exist_ok=True)
+    
+    output_folder = "data/" + str(pt) + "/" + str(fd)  + "/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+
+rule all: 
+    input: OUTPUT_UNIQUE, UNIQUE_PLOTDATA_FILTERED
+
+
+
+####INTERSECTION####
+
+rule subtract_tumor_germline_all_germline_filtered_bams_tumor_ci5_cs1e9_de_novo:
+    input:
+        tumor_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/tumor_kmers.kmc_pre",
+        tumor_suf = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/tumor_kmers.kmc_suf",
+        germline_pre = "data/germline_union_de_novo_and_k50.kmc_pre",
+        germline_suf = "data/germline_union_de_novo_and_k50.kmc_suf"
+    output: 
+        unique_tumor_kmers_pre = "data/{pt}/{output_f}/de_novo_germline/unique_tumor_kmers.kmc_pre",
+        unique_tumor_kmers_suf = "data/{pt}/{output_f}/de_novo_germline/unique_tumor_kmers.kmc_suf"
+    resources: 
+        mem_mb = 300000, 
+        time = "6:00:00"
+    threads: 1
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        "kmc_tools simple data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/tumor_kmers -ci5 -cx1000000000 data/germline_union_de_novo_and_k50 -ci0 -cx1000000000 kmers_subtract data/{wildcards.pt}/{wildcards.output_f}/de_novo_germline/unique_tumor_kmers -ci0 -cx1000000000 -cs1000000000"
+     
+        
+        
+#########################################################################
+
+
+
+
+
+
+
+####PLOTS###########
+rule make_plotfile_unique_tumor_all_germline_filtered_bams_tumor_ci5_cs1e9_de_novo:
+    input: 
+        kmers_pre = "data/{pt_unique_plot}/{output_f_unique_plot}/de_novo_germline/unique_tumor_kmers.kmc_pre",
+        kmers_suf = "data/{pt_unique_plot}/{output_f_unique_plot}/de_novo_germline/unique_tumor_kmers.kmc_suf"
+    output: 
+        plotdata = "data/{pt_unique_plot}/{output_f_unique_plot}/de_novo_germline/plotdata_unique_tumor_kmers.txt"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/{wildcards.pt_unique_plot}/{wildcards.output_f_unique_plot}/de_novo_germline/unique_tumor_kmers -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+
+rule filter_plotfile_unique_tumor_all_germline_filtered_bams_tumor_ci5_cs1e9_de_novo:
+    input:
+        plotdata = "data/{pt_unique_plot}/{output_f_unique_plot}/de_novo_germline/plotdata_unique_tumor_kmers.txt"
+    output: 
+        plotdata_filtered = "data/{pt_unique_plot}/{output_f_unique_plot}/de_novo_germline/plotdata_unique_tumor_kmers_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+
+

@@ -42,10 +42,10 @@ print(all_tumor_sum)
 ratio = (intersection_sum/all_cfDNA_sum)/(unique_tumor_sum/all_tumor_sum)
 
 
-intersection_sim = sort(rpois(10000, intersection_sum))
-all_cfDNA_sim = sort(rpois(10000, all_cfDNA_sum))
-unique_tumor_sim = sort(rpois(10000, unique_tumor_sum))
-all_tumor_sim = sort(rpois(10000, all_tumor_sum))
+intersection_sim = (rpois(10000, intersection_sum))
+all_cfDNA_sim = (rpois(10000, all_cfDNA_sum))
+unique_tumor_sim = (rpois(10000, unique_tumor_sum))
+all_tumor_sim = (rpois(10000, all_tumor_sum))
 
 ratios_sim = (intersection_sim/all_cfDNA_sim)/(unique_tumor_sim/all_tumor_sim)
 ratios_sim = sort(ratios_sim)
@@ -57,6 +57,6 @@ print(tail(ratios_sim))
 lowerCI = quantile(ratios_sim,.025)
 upperCI = quantile(ratios_sim,.975)
 
-res = tibble(ratio = ratio, lower_CI = lowerCI, upper_CI = upperCI)
+res = tibble(ratio = ratio, lower_CI = lowerCI, upper_CI = upperCI, intersection_sum = intersection_sum, all_cfDNA_sum = all_cfDNA_sum, unique_tumor_sum = unique_tumor_sum, all_tumor_sum = all_tumor_sum)
 
 write.csv(res, snakemake@output[["ratio"]], row.names = FALSE)

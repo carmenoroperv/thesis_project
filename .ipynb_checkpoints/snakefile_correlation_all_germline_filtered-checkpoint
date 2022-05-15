@@ -20,29 +20,35 @@ rule all:
     input: OUTPUT_INTERSECTION, OUTPUT_DUMP, OUTPUT_CORRELATION
     
 
-rule correlation_intersect_tumor_cfDNAintersect:
+rule correlation_intersect_tumor_cfDNAintersect_all_germline_filtered_tumor_bams_ci5_cs1e9:
     input: 
         unique_tumor_kmers_pre = lambda wildcards: str("data/" + str(wildcards.pt) + "/" +  str(Path(UNIQUE_TUMOR_KMERS_FOLDER[wildcards.output_f])) +  "/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers.kmc_pre"),
         intersection_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_pre"  
     output: "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers_in_cfDNA.kmc_pre"
+    resources: 
+        mem_mb = 50000, 
+        time = "6:00:00"
     params: 
         unique_tumor_kmers_file = lambda wildcards: str("data/" + str(wildcards.pt) + "/" +  str(Path(UNIQUE_TUMOR_KMERS_FOLDER[wildcards.output_f])) +  "/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers")
     conda: "envs/ctDNA.yml" 
     shell: "kmc_tools simple {params.unique_tumor_kmers_file} -ci0 -cx1000000000 data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect -ci0 -cx1000000000 intersect data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers_in_cfDNA -ci0 -cx1000000000 -cs1000000000 -ocleft "
 
     
-rule correlation_dump:
+rule correlation_dump_all_germline_filtered_tumor_bams_ci5_cs1e9:
     input: 
         intersection_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers_in_cfDNA.kmc_pre"  
     output: 
         plotdata = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/intersection_unique_tumor_cfDNAintersection.txt"   
+    resources: 
+        mem_mb = 50000, 
+        time = "6:00:00"
     conda: "envs/ctDNA.yml" 
     shell: "kmc_tools transform data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers_in_cfDNA -ci0 -cx1000000000 dump data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/intersection_unique_tumor_cfDNAintersection.txt -ci0 -cx1000000000"
 
 
 ####ATTENTION: if the input is changed, it has to be changed in the script from the following rule as well since it is hardcoded here!!
 
-rule correlation_merge_and_calculate_correlation:
+rule correlation_merge_and_calculate_correlation_all_germline_filtered_tumor_bams_ci5_cs1e9:
     input: 
         input_dump = OUTPUT_DUMP
         #tumor = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9/intersection_unique_tumor_cfDNAintersection.txt",
@@ -51,6 +57,9 @@ rule correlation_merge_and_calculate_correlation:
         pt_id = "{pt}"
     output: 
         correlation_output = "data/{pt}/all_germline_filtered_bams_tumor_ci5_cs1e9_correlation.csv"
+    resources: 
+        mem_mb = 50000, 
+        time = "6:00:00"
     conda: "envs/ctDNA.yml" 
     script: "scripts_utils/merge_and_correlation.R"
     

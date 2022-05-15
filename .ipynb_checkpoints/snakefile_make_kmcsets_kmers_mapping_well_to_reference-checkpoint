@@ -1,0 +1,75 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseI.csv", index_col='pt_id')
+TUMOR_FILES = paramspace["tumor_bam_path"]
+GERMLINE_FILES = paramspace["germline_bam_path"]
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+KMC_SET = expand("data/{pt_tumor}/{output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches.kmc_pre", zip, pt_tumor=SAMPLES, output_f_tumor = OUTPUT_PT_FOLDER)
+DUMPS = expand("data/{pt_tumor}/{output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/dump_kmers_mapping_w_01_mismatches.txt", zip, pt_tumor=SAMPLES, output_f_tumor = OUTPUT_PT_FOLDER)
+
+for pt, fd in zip(SAMPLES, OUTPUT_PT_FOLDER):
+    tmp_folder_tumor = "tmp_tumor/tmp_tumor_" + str(pt) + "/" + str(fd)  + "_unique_tumor_kmers_mapping_well_to_reference/"
+    Path(tmp_folder_tumor).mkdir(parents=True, exist_ok=True)
+    
+    output_folder = "data/" + str(pt) + "/" + str(fd)  + "/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+rule all: 
+    input: KMC_SET, DUMPS
+
+
+####COUNT TUMOR#####
+
+
+rule create_fastafiles_of_unique_tumor_kmers_mapping_well_to_reference:
+    input:
+        tsv_file = "data/{pt_tumor}/{output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches.tsv"
+    output: 
+        fasta = "data/{pt_tumor}/{output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches.fasta"
+    resources: 
+        mem_mb = 300000, 
+        time = "15:00:00"
+    params:
+        pt = "{pt_tumor}",
+        folder = "{output_f_tumor}"
+    conda: 
+        "envs/ctDNA.yml"
+    script:
+        "scripts_utils/create_fasta_files_of_kmers_mapping_well_to_reference.R"
+        
+
+rule create_kmcset_of_unique_tumor_kmers_mapping_well_to_reference:
+    input:
+        fasta = "data/{pt_tumor}/{output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches.fasta"
+    output: 
+        kmers_pre = "data/{pt_tumor}/{output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches.kmc_pre",
+        kmers_suf = "data/{pt_tumor}/{output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches.kmc_suf"
+    resources: 
+        mem_mb = 300000, 
+        time = "6:00:00"
+    params:
+        tmpdir = "tmp_tumor/tmp_tumor_{pt_tumor}/{output_f_tumor}_unique_tumor_kmers_mapping_well_to_reference/"
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        'kmc -k50 -m300 -t{threads} -ci0 -cx1000000000 -cs1000000000 -fm {input.fasta} data/{wildcards.pt_tumor}/{wildcards.output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches {params.tmpdir}'
+
+
+rule dump_unique_tumor_kmers_mapping_well_to_reference:
+    input: 
+        kmers_pre = "data/{pt_tumor}/{output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches.kmc_pre",
+        kmers_suf = "data/{pt_tumor}/{output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches.kmc_suf"
+    output: 
+        plotdata = "data/{pt_tumor}/{output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/dump_kmers_mapping_w_01_mismatches.txt"
+    resources: 
+        mem_mb = 200000, 
+        time = "4:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/{wildcards.pt_tumor}/{wildcards.output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/kmers_mapping_w_01_mismatches -ci0 -cx1000000000 dump data/{wildcards.pt_tumor}/{wildcards.output_f_tumor}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/dump_kmers_mapping_w_01_mismatches.txt -ci0 -cx1000000000 -cs1000000000"
+    
