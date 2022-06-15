@@ -1,0 +1,206 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+paramspace = pd.read_csv("data/metadata/paramspace_cfDNA_phaseI.csv", index_col='cfDNA_folder')
+cfDNA_FILE_PATHS = paramspace["cfDNA_bam_path"]
+UNIQUE_KMERS_PATHS = paramspace["unique_kmers_folder"]
+SAMPLES = paramspace["pt_id"]
+FOLDERS = paramspace.index
+
+
+HISTOGRAM_INTERSECTION = expand("data/{pt_hist}/{output_f_hist}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/histogram_intersection.png", zip, pt_hist = SAMPLES, output_f_hist = FOLDERS)
+DUMP_INTERSECTION = expand("data/{pt_dump_int}/{output_f_dump_int}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.txt", zip, pt_dump_int = SAMPLES, output_f_dump_int = FOLDERS)
+
+PLOTDATA_FILTERED = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_cfDNA_kmers_filtered.txt", zip, pt = SAMPLES, output_f = FOLDERS)
+
+RATIOS = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/big_ratio.csv", zip, pt = SAMPLES, output_f = FOLDERS)
+SMALL_RATIOS = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/small_ratio.csv", zip, pt = SAMPLES, output_f = FOLDERS)
+UPPER_RATIOS = expand("data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/big_upper_ratio.csv", zip, pt = SAMPLES, output_f = FOLDERS)
+
+for pt, fd in zip(SAMPLES, FOLDERS):
+    tmp_folder = "tmp_cfDNA/tmp_cfDNA_" + str(pt) + "/" + str(fd)  + "_ci2/"
+    Path(tmp_folder).mkdir(parents=True, exist_ok=True)
+    
+    output_folder = "data/" + str(pt) + "/" + str(fd)  + "/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+
+rule all: 
+    input:PLOTDATA_FILTERED #, HISTOGRAM_INTERSECTION, DUMP_INTERSECTION, RATIOS, SMALL_RATIOS, UPPER_RATIOS
+
+
+######COUNT cfDNA K-MERS###############
+
+rule count_cfDNA_kmers_ci2_cs1e9:
+    input:
+        bam_file = lambda wildcards: str(Path(cfDNA_FILE_PATHS[wildcards.output_f]))
+    output: 
+        kmers_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers.kmc_pre", 
+        kmers_suf = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers.kmc_suf"
+    resources: 
+        mem_mb = 300000, 
+        time = "5:00:00"
+    threads: 1
+    params:
+        tmpdir = "tmp_cfDNA/tmp_cfDNA_{pt}/{output_f}_ci2"
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        'kmc -k50 -m300 -t{threads} -ci2 -cx1000000000 -cs1000000000 -fbam {input.bam_file} data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers {params.tmpdir}' 
+
+
+rule make_plotfile_cfDNA_kmers_ci2_cs1e9:
+    input: 
+        intersection_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers.kmc_pre"
+    output: 
+        plotdata = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_cfDNA_kmers.txt"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers -ci2 -cx1000000000 histogram {output.plotdata} -ci2 -cx1000000000"
+
+
+rule filter_plotfile_cfDNA_kmers_ci2_cs1e9:
+    input:
+        plotdata = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_cfDNA_kmers.txt"
+    output: 
+        plotdata_filtered = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_cfDNA_kmers_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"        
+        
+
+###################### INTERSECT WITH UNIQUE TUMOR K-MERS ######################
+rule intersect_cfDNA_unique_tumor_all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9:
+    input:
+        unique_tumor_kmers = lambda wildcards: str("data/" + str(wildcards.pt) + "/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) +  "/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers.kmc_pre"),
+        cfDNA_kmers = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers.kmc_pre"
+    output: 
+        intersections_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_pre", 
+        intersections_suf = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_suf"
+    resources: 
+        mem_mb = 100000, 
+        time = "5:00:00"
+    params: 
+        unique_tumor_kmers_file = lambda wildcards: str("data/" + str(wildcards.pt) + "/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) +  "/all_germline_filtered_bams_tumor_ci5_cs1e9/unique_tumor_kmers")
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        "kmc_tools simple data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers -ci2 -cx1000000000 {params.unique_tumor_kmers_file} -ci0 -cx1000000000 intersect data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect -ci0 -cs1000000000 -cx1000000000 -ocleft" 
+
+
+###################### PLOT HISTOGRAM ######################
+
+rule make_plotfile_intersection_all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9:
+    input: 
+        intersection_pre = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_pre"
+    output: 
+        plotdata = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_intersection.txt"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/{wildcards.pt}/{wildcards.output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule filter_plotfile_intersection_all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9:
+    input:
+        plotdata = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_intersection.txt"
+    output: 
+        plotdata_filtered = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_intersection_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"        
+
+rule make_plot_intersection_all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9:
+    input: 
+        input_filename = "data/{pt_hist}/{output_f_hist}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_intersection_filtered.txt"
+    output: 
+        output_filename = "data/{pt_hist}/{output_f_hist}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/histogram_intersection.png"
+    resources: 
+        mem_mb = 5000, 
+        time = "1:00:00"
+    conda: 
+        "envs/ctDNA.yml"
+    script:
+        "histogram_plots.R"
+
+rule dump_intersection_all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9:
+    input: 
+        intersections_pre = "data/{pt_dump_int}/{output_f_dump_int}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_pre", 
+        intersections_suf = "data/{pt_dump_int}/{output_f_dump_int}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_suf"
+    output: 
+        plotdata = "data/{pt_dump_int}/{output_f_dump_int}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.txt"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/{wildcards.pt_dump_int}/{wildcards.output_f_dump_int}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect -ci0 -cx1000000000 dump data/{wildcards.pt_dump_int}/{wildcards.output_f_dump_int}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect.txt -ci0 -cx1000000000 -cs1000000000"
+
+
+
+###################### CALCULATE RATIO ######################
+
+rule calculate_big_ratio_all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9:
+    input: 
+        intersection = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_intersection_filtered.txt",
+        all_cfDNA = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_cfDNA_kmers_filtered.txt",
+        unique_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_unique_tumor_kmers_filtered.txt"),
+        all_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_tumor_filtered.txt")
+    output: 
+        ratio = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/big_ratio.csv"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
+    conda: 
+        "envs/r4base.yml"
+    script:
+        "calculate_ratio.R"
+        
+rule calculate_big_upper_ratio_all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9:
+    input: 
+        intersection = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_intersection_filtered.txt",
+        all_cfDNA = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_cfDNA_kmers_filtered.txt",
+        unique_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_unique_tumor_kmers_filtered.txt"),
+        all_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_tumor_filtered.txt")
+    output: 
+        ratio = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/big_upper_ratio.csv"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
+    conda: 
+        "envs/r4base.yml"
+    script:
+        "calculate_ratio_upper.R"
+
+
+rule calculate_small_ratio_all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9:
+    input: 
+        intersection = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/plotdata_intersection_filtered.txt",
+        unique_tumor = lambda wildcards: str("data/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/all_germline_filtered_bams_tumor_ci5_cs1e9/plotdata_unique_tumor_kmers_filtered.txt")
+    output: 
+        ratio = "data/{pt}/{output_f}/all_germline_filtered_bams_tumor_ci5_cs1e9_cfDNA_ci2_cs1e9/small_ratio.csv"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
+    conda: 
+        "envs/ctDNA.yml"
+    script:
+        "calculate_ratio_small.R"
+

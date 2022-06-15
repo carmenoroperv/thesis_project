@@ -1,0 +1,78 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseII.csv", index_col='pt_id')
+TUMOR_FILES = paramspace["tumor_bam_path"]
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+
+OUTPUT_TUMOR = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/tumor_kmers.kmc_suf", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+FILTERED_PLOTDATA = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_tumor_filtered.txt", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+
+
+
+
+for pt, fd in zip(SAMPLES, OUTPUT_PT_FOLDER):
+    tmp_folder_tumor = "tmp_tumor/tmp_tumor_" + str(pt) + "/" + str(fd)  + "_phase_II/"
+    Path(tmp_folder_tumor).mkdir(parents=True, exist_ok=True)
+    
+    tmp_folder_healthy = "tmp_normal/tmp_normal_" + str(pt) + "/" + str(fd)  + "_phase_II/"
+    Path(tmp_folder_healthy).mkdir(parents=True, exist_ok=True)
+    
+    output_folder = "data/phase_II_patients/" + str(pt) + "/" + str(fd)  + "/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+
+rule all: 
+    input: OUTPUT_TUMOR, FILTERED_PLOTDATA
+
+####COUNT TUMOR#####
+
+rule count_tumor_phase_II:
+    input:
+        bam_file = "data/phase_II_patients/{pt}/{output_f}/tumor_reads_filtered_maxquality_based.bam"
+    output: 
+        kmers_pre = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/tumor_kmers.kmc_pre",
+        kmers_suf = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/tumor_kmers.kmc_suf"
+    threads: 1
+    resources: 
+        mem_mb = 300000, 
+        time = "7:00:00"
+    params:
+        tmpdir = "tmp_tumor/tmp_tumor_{pt}/{output_f}_phase_II/"
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        'kmc -k50 -m300 -t{threads} -ci5 -cx1000000000 -cs1000000000 -fbam {input.bam_file} data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/tumor_kmers {params.tmpdir}'
+        
+
+rule PHASE_II_make_plotfile_tumor:
+    input: 
+        kmers_pre = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/tumor_kmers.kmc_pre",
+        kmers_suf = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/tumor_kmers.kmc_suf"
+    output: 
+        plotdata = temp("data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_tumor.txt")
+    resources: 
+        mem_mb = 100000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        'kmc_tools transform data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/tumor_kmers -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000'
+        
+
+rule PHASE_II_filter_plotfile_tumor:
+    input:
+        plotdata = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_tumor.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_tumor_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"    

@@ -1,0 +1,16 @@
+blastn -query unmapped_kmers_pt1.fasta -db ref_prok_rep_genomes -out unmapped_kmers_blast_pt1.tsv -evalue 1e-10 -perc_identity 100 -word_size 50 -ungapped -outfmt "6 qseqid sseqid staxid ssciname pident nident length mismatch gapopen gaps qstart qend sstart send evalue bitscore qseq sseq"
+blastn -query unmapped_kmers_pt2.fasta -db ref_prok_rep_genomes -out unmapped_kmers_blast_pt2.tsv -evalue 1e-10 -perc_identity 100 -word_size 50 -ungapped -outfmt "6 qseqid sseqid staxid ssciname pident nident length mismatch gapopen gaps qstart qend sstart send evalue bitscore qseq sseq"
+blastn -query unmapped_kmers_pt3.fasta -db ref_prok_rep_genomes -out unmapped_kmers_blast_pt3.tsv -evalue 1e-10 -perc_identity 100 -word_size 50 -ungapped -outfmt "6 qseqid sseqid staxid ssciname pident nident length mismatch gapopen gaps qstart qend sstart send evalue bitscore qseq sseq"
+
+########
+blastdb_aliastool -dblist "ref_euk_rep_genomes ref_prok_rep_genomes ref_viroids_rep_genomes ref_viruses_rep_genomes" -dbtype nucl -out ref_rep_genomes_all -title "RefSeq Representative Genomes: eukaryotes, prokaryotes, viroids, viruses"
+Created nucleotide BLAST (alias) database ref_rep_genomes_all with 13835480 sequences
+
+
+##############
+
+
+
+blastn -query data/{pt}/{folder}/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unmapped_kmers.fasta -db ref_rep_genomes_all -out blasting/results/all_germline_filtered_bams_tumor_ci5_cs1e9/unmapped_kmers_blast_pt1.tsv -evalue 1e-10 -perc_identity 100 -word_size 50 -ungapped -outfmt "6 qseqid sseqid staxid ssciname pident nident length mismatch gapopen gaps qstart qend sstart send evalue bitscore qseq sseq"
+
+

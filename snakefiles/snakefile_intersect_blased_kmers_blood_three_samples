@@ -1,0 +1,31 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+
+
+paramspace = pd.read_csv("data/metadata/paramspace_cfDNA_phaseI_BLASTING.csv", index_col='cfDNA_folder')
+cfDNA_FILE_PATHS = paramspace["cfDNA_bam_path"]
+UNIQUE_KMERS_PATHS = paramspace["unique_kmers_folder"]
+SAMPLES = paramspace["pt_id"]
+OUTPUT_PT_FOLDER = paramspace.index
+UNIQUE_TUMOR_KMERS_FOLDER = paramspace["unique_kmers_folder"]
+
+
+OUTPUT_INTERSECTION = expand("blasting/{pt}/{output_f}/overlap.csv", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+
+rule all: 
+    input: OUTPUT_INTERSECTION
+    
+
+rule intersect_blased_kmers_and_blood_samples_three_patients:
+    input: 
+        unique_cfDNA = "data/{pt}/{output_f}/cs1e9/cfDNA_kmers_unique_tumor_kmers_intersect_cs1e9.txt",
+        blasted_kmers = "blasting/{pt}/blast_kmers_correct.csv"  
+    output: 
+        no_output = "blasting/{pt}/{output_f}/overlap.csv"
+    resources: 
+        mem_mb = 50000, 
+        time = "6:00:00"
+    conda: "envs/ctDNA.yml" 
+    script: "blasting/Intersect_blasted_kmers_blood.R"

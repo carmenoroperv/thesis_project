@@ -1,0 +1,152 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+paramspace = pd.read_csv("data/metadata/paramspace_cfDNA_phaseII.csv", index_col='cfDNA_folder')
+cfDNA_FILE_PATHS = paramspace["cfDNA_bam_path"]
+UNIQUE_KMERS_PATHS = paramspace["unique_kmers_folder"]
+SAMPLES = paramspace["pt_id"]
+FOLDERS = paramspace.index
+
+
+PLOTDATA_INTERSECTION_FILTERED = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_intersection_filtered.txt", zip, pt = SAMPLES, output_f = FOLDERS)
+RATIOS = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/big_ratio.csv", zip, pt = SAMPLES, output_f = FOLDERS)
+SMALL_RATIOS = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/small_ratio.csv", zip, pt = SAMPLES, output_f = FOLDERS)
+BIG_RATIOS_WO_COUNTS = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/big_wo_counts_ratio.csv", zip, pt = SAMPLES, output_f = FOLDERS)
+SMALL_RATIOS_W_COUNTS = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/small_w_counts_ratio.csv", zip, pt = SAMPLES, output_f = FOLDERS)
+DUMP = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers_unique_tumor_kmers_intersect.txt", zip, pt = SAMPLES, output_f = FOLDERS)
+#BIG_RATIOS_WO_COUNTS, SMALL_RATIOS_W_COUNTS,
+
+rule all: 
+    input: PLOTDATA_INTERSECTION_FILTERED, SMALL_RATIOS #DUMP #,RATIOS, ,
+
+
+###################### INTERSECT WITH UNIQUE TUMOR K-MERS ######################
+rule PHASE_II_intersect_cfDNA_unique_tumor_all_germline_filtered_tumor_ci5_cs1e9_de_novo_reference:
+    input:
+        unique_tumor_kmers = lambda wildcards: str("data/phase_II_patients/" + str(wildcards.pt) + "/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) +  "/final_pipeline/unique_tumor_kmers.kmc_pre"),
+        cfDNA_kmers = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers.kmc_pre"
+    output: 
+        intersections_pre = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_pre", 
+        intersections_suf = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_suf"
+    resources: 
+        mem_mb = 17000, 
+        time = "2:00:00"
+    params: 
+        unique_tumor_kmers_file = lambda wildcards: str("data/phase_II_patients/" + str(wildcards.pt) + "/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) +  "/final_pipeline/unique_tumor_kmers")
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        "kmc_tools simple data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/cfDNA_kmers -ci0 -cx1000000000 {params.unique_tumor_kmers_file} -ci0 -cx1000000000 intersect data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/cfDNA_kmers_unique_tumor_kmers_intersect -ci0 -cs1000000000 -cx1000000000 -ocleft" 
+
+
+###################### PLOT HISTOGRAM ######################
+
+rule PHASE_II_make_plotfile_intersection_all_germline_filtered_tumor_ci5_cs1e9_de_novo_reference:
+    input: 
+        intersection_pre = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_intersection.txt")
+    resources: 
+        mem_mb = 20000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/cfDNA_kmers_unique_tumor_kmers_intersect -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule PHASE_II_filter_plotfile_intersection_all_germline_filtered_tumor_ci5_cs1e9_de_novo_reference:
+    input:
+        plotdata = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_intersection.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_intersection_filtered.txt"
+    resources: 
+        mem_mb = 20000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+
+
+rule PHASE_II_dump_intersection_all_germline_filtered_tumor_ci5_cs1e9_de_novo_reference:
+    input: 
+        intersections_pre = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_pre", 
+        intersections_suf = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers_unique_tumor_kmers_intersect.kmc_suf"
+    output: 
+        plotdata = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers_unique_tumor_kmers_intersect.txt"
+    resources: 
+        mem_mb = 20000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/cfDNA_kmers_unique_tumor_kmers_intersect -ci0 -cx1000000000 dump data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/cfDNA_kmers_unique_tumor_kmers_intersect.txt -ci0 -cx1000000000 -cs1000000000"
+        
+        
+###################### CALCULATE RATIO ######################
+
+rule PHASE_II_calculate_big_ratio_all_germline_filtered_tumor_ci5_cs1e9_de_novo_reference:
+    input: 
+        intersection = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_intersection_filtered.txt",
+        all_cfDNA = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_cfDNA_filtered.txt",
+        unique_tumor = lambda wildcards: str("data/phase_II_patients/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/final_pipeline/plotdata_unique_tumor_kmers_filtered.txt"),
+        all_tumor = lambda wildcards: str("data/phase_II_patients/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/final_pipeline/plotdata_tumor_filtered.txt")
+    output: 
+        ratio = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/big_ratio.csv"
+    resources: 
+        mem_mb = 20000, 
+        time = "2:00:00"
+    conda: 
+        "envs/r4base.yml"
+    script:
+        "calculate_ratio.R"
+        
+        
+rule PHASE_II_calculate_small_ratio_all_germline_filtered_tumor_ci5_cs1e9_de_novo_reference:
+    input: 
+        intersection = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_intersection_filtered.txt",
+        unique_tumor = lambda wildcards: str("data/phase_II_patients/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/final_pipeline/plotdata_unique_tumor_kmers_filtered.txt")
+    output: 
+        ratio = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/small_ratio.csv"
+    resources: 
+        mem_mb = 20000, 
+        time = "2:00:00"
+    conda: 
+        "envs/ctDNA.yml"
+    script:
+        "calculate_ratio_small.R"
+
+
+
+rule PHASE_II_calculate_big_ratio_wo_counts_all_germline_filtered_tumor_ci5_cs1e9_de_novo_reference:
+    input: 
+        intersection = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_intersection_filtered.txt",
+        all_cfDNA = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_cfDNA_filtered.txt",
+        unique_tumor = lambda wildcards: str("data/phase_II_patients/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/final_pipeline/plotdata_unique_tumor_kmers_filtered.txt"),
+        all_tumor = lambda wildcards: str("data/phase_II_patients/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/final_pipeline/plotdata_tumor_filtered.txt")
+    output: 
+        ratio = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/big_wo_counts_ratio.csv"
+    resources: 
+        mem_mb = 20000, 
+        time = "2:00:00"
+    conda: 
+        "envs/r4base.yml"
+    script:
+        "calculate_ratio_wo_counts.R"
+        
+        
+rule PHASE_II_calculate_small_ratio_w_counts_all_germline_filtered_tumor_ci5_cs1e9_de_novo_reference:
+    input: 
+        intersection = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_intersection_filtered.txt",
+        unique_tumor = lambda wildcards: str("data/phase_II_patients/{pt}/" + str(Path(UNIQUE_KMERS_PATHS[wildcards.output_f])) + "/final_pipeline/plotdata_unique_tumor_kmers_filtered.txt")
+    output: 
+        ratio = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/small_w_counts_ratio.csv"
+    resources: 
+        mem_mb = 20000, 
+        time = "2:00:00"
+    conda: 
+        "envs/ctDNA.yml"
+    script:
+        "calculate_ratio_small_w_counts.R"

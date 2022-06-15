@@ -1,0 +1,43 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseII.csv", index_col='pt_id')
+GERMLINE_FILES = paramspace["germline_bam_path"]
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+
+
+OUTPUT_GERMLINE = expand("data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline_kmers.kmc_pre", zip, pt_normal=SAMPLES, output_f_normal = OUTPUT_PT_FOLDER)
+
+
+
+for pt, fd in zip(SAMPLES, OUTPUT_PT_FOLDER):
+    tmp_folder_tumor = "tmp_normal/tmp_normal_" + str(pt) + "/" + str(fd) + "_de_novo_germline/"
+    Path(tmp_folder_tumor).mkdir(parents=True, exist_ok=True)
+    
+    output_folder = "data/" + str(pt) + "/" + str(fd)  + "/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+rule all: 
+    input:  OUTPUT_GERMLINE
+
+
+
+rule PHASE_II_count_germline_de_novo:
+    input:
+        fasta_file = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline.fasta"
+    output: 
+        kmers_pre = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline_kmers.kmc_pre", 
+        kmers_suf = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline_kmers.kmc_suf"
+    resources: 
+        mem_mb = 300000, 
+        time = "10:00:00"
+    params:
+        tmpdir = "tmp_normal/tmp_normal_{pt_normal}/{output_f_normal}_de_novo_germline/"
+    conda: 
+        "envs/ctDNA.yml"
+    threads: 1
+    shell:
+        "kmc -k50 -m300 -t{threads} -ci0 -cs1000000000 -cx1000000000 -fm {input.fasta_file} data/phase_II_patients/{wildcards.pt_normal}/{wildcards.output_f_normal}/de_novo_germline/germline_kmers {params.tmpdir}"

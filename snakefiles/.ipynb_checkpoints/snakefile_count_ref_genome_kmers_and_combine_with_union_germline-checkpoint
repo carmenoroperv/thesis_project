@@ -1,0 +1,87 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+
+
+tmp_folder_tumor = "tmp_normal/tmp_normal/reference_genome/"
+Path(tmp_folder_tumor).mkdir(parents=True, exist_ok=True)
+
+output_folder = "data/"
+Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+OUTPUT_REF = "data/reference_genome_kmers.kmc_pre"
+OUTPUT_COMBINED = "data/germline_union_de_novo_and_k50_and_reference.kmc_pre"
+PLOTDATA_FILTERED = "data/plotdata_germline_union_de_novo_and_k50_and_reference_filtered.txt"
+
+rule all: 
+    input:  OUTPUT_REF, OUTPUT_COMBINED, PLOTDATA_FILTERED
+
+
+####INTERSECTION####
+
+
+rule count_reference_genome_kmers:
+    input:
+        fasta_file = "../../../MomaReference/BACKUP/hg38/reference_genome/GCA_000001405.15_GRCh38_no_alt_analysis_set.GRC_exclusions_masked.fna"
+    output: 
+        kmers_pre = "data/reference_genome_kmers.kmc_pre", 
+        kmers_suf = "data/reference_genome_kmers.kmc_suf"
+    resources: 
+        mem_mb = 300000, 
+        time = "6:00:00"
+    params:
+        tmpdir = "tmp_normal/tmp_normal/reference_genome/"
+    conda: 
+        "envs/ctDNA.yml"
+    threads: 1
+    shell:
+        "kmc -k50 -m300 -t{threads} -ci0 -cs1000000000 -cx1000000000 -fm {input.fasta_file} data/reference_genome_kmers {params.tmpdir}"
+        
+        
+
+rule combine_reference_genome_and_union_germline_kmersets:
+    input:
+        reference = "data/reference_genome_kmers.kmc_pre",
+        union_and_de_novo_union_germline = "data/germline_union_de_novo_and_k50.kmc_pre"
+    output: 
+        kmers_pre = "data/germline_union_de_novo_and_k50_and_reference.kmc_pre",
+        kmers_suf = "data/germline_union_de_novo_and_k50_and_reference.kmc_suf"
+    threads: 1
+    resources: 
+        mem_mb = 200000, 
+        time = "6:00:00"
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        "kmc_tools simple data/reference_genome_kmers -ci0 -cx1000000000 data/germline_union_de_novo_and_k50 -ci0 -cx1000000000 union data/germline_union_de_novo_and_k50_and_reference -ci0 -cx1000000000 -cs1000000000"
+        
+
+
+rule make_plotfile_germline_union_reference_genome_and_union_germline_kmersets:
+    input: 
+        kmers_pre = "data/germline_union_de_novo_and_k50_and_reference.kmc_pre",
+        kmers_suf = "data/germline_union_de_novo_and_k50_and_reference.kmc_suf"
+    output: 
+        plotdata = "data/plotdata_germline_union_de_novo_and_k50_and_reference.txt"
+    resources: 
+        mem_mb = 200000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/germline_union_de_novo_and_k50_and_reference -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule filter_plotfile_germline_union_reference_genome_and_union_germline_kmersets:
+    input: 
+        plotdata = "data/plotdata_germline_union_de_novo_and_k50_and_reference.txt"
+    output: 
+        plotdata_filtered = "data/plotdata_germline_union_de_novo_and_k50_and_reference_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"

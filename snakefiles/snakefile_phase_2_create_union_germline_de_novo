@@ -1,0 +1,893 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseII.csv", index_col='pt_id')
+GERMLINE_FILES = paramspace["germline_bam_path"]
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+for pt, fd in zip(SAMPLES, OUTPUT_PT_FOLDER):
+    output_folder = "data/phase_II_patients/" + str(pt) + "/" + str(fd)  + "/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+    
+    output_folder = "data/phase_II_patients/creating_union_germline_de_novo" + "/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+####################################################### 1 to 2 ##############################################################
+    
+paramspace1_1 = paramspace.iloc[:32, :]
+paramspace1_2 = paramspace.iloc[32:64, :]
+paramspace1_3 = paramspace.iloc[64:97, :]
+paramspace1_4 = paramspace.iloc[97:130, :]
+paramspace1_5_one_sample = paramspace.iloc[130:131, :]
+
+print(paramspace1_1.shape)
+print(paramspace1_2.shape)
+print(paramspace1_3.shape)
+print(paramspace1_4.shape)
+print(paramspace1_5_one_sample.shape)
+
+SAMPLES_1A = paramspace1_1.index
+SAMPLES_1B = paramspace1_2.index
+SAMPLES_1C = paramspace1_3.index
+SAMPLES_1D = paramspace1_4.index
+
+OUTPUT_PT_FOLDER_1A = paramspace1_1["output_path_unique_kmers"]
+OUTPUT_PT_FOLDER_1B = paramspace1_2["output_path_unique_kmers"]
+OUTPUT_PT_FOLDER_1C = paramspace1_3["output_path_unique_kmers"]
+OUTPUT_PT_FOLDER_1D = paramspace1_4["output_path_unique_kmers"]
+
+O_2_v1 = expand("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_1_to_2/pt_AB/plotdata_germline_{ptA}__{ptB}.txt", zip, ptA=SAMPLES_1A, ptB = SAMPLES_1B)
+O_2_v2 = expand("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_1_to_2/pt_CD/plotdata_germline_{ptC}__{ptD}.txt", zip, ptC=SAMPLES_1C, ptD = SAMPLES_1D)
+
+
+commands_2_v1 = ""
+new_paramspace_pt__2 = []
+for pt_A, pt_B in zip(SAMPLES_1A, SAMPLES_1B):
+    print(f"Patient A: {pt_A}, Patient B: {pt_B}")
+    new_paramspace_pt__2.append(str(pt_A) + "__" + str(pt_B))
+
+    commands_2_v1 = commands_2_v1 + f"kmc_tools simple data/phase_II_patients/{pt_A}/{str(Path(OUTPUT_PT_FOLDER_1A[pt_A]))}/de_novo_germline/germline_kmers -ci0 -cx1000000000 data/phase_II_patients/{pt_B}/{str(Path(OUTPUT_PT_FOLDER_1B[pt_B]))}/de_novo_germline/germline_kmers -ci0 -cx1000000000 union data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{pt_A}__{pt_B} -ci0 -cx1000000000 -cs1000000000\n"
+    
+commands_2_v2 = ""
+for pt_C, pt_D in zip(SAMPLES_1C, SAMPLES_1D):
+    print(f"Patient C: {pt_C}, Patient D: {pt_D}")
+    new_paramspace_pt__2.append(str(pt_C) + "__" + str(pt_D))
+
+    commands_2_v2 = commands_2_v2 + f"kmc_tools simple data/phase_II_patients/{pt_C}/{str(Path(OUTPUT_PT_FOLDER_1C[pt_C]))}/de_novo_germline/germline_kmers -ci0 -cx1000000000 data/phase_II_patients/{pt_D}/{str(Path(OUTPUT_PT_FOLDER_1D[pt_D]))}/de_novo_germline/germline_kmers -ci0 -cx1000000000 union data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{pt_C}__{pt_D} -ci0 -cx1000000000 -cs1000000000\n"
+
+paramspace_pt_2_dict = {"pt_id" : new_paramspace_pt__2}
+paramspace_pt_2_df = pd.DataFrame(paramspace_pt_2_dict)
+paramspace_pt_2_df.to_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_2.csv", index=False)
+
+
+print(commands_2_v1)
+print("   ")
+print(commands_2_v2)
+
+#############################################################################################################################
+
+####################################################### 2 to 4 ##############################################################
+
+paramspace_2 = pd.read_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_2.csv", index_col='pt_id')
+SAMPLES_2 = paramspace_2.index
+
+paramspace2_1 = paramspace_2.iloc[:32, :]
+paramspace2_2 = paramspace_2.iloc[32:64, :]
+paramspace2_3_one_sample = paramspace_2.iloc[64:65, :]
+
+print(paramspace2_1.shape)
+print(paramspace2_2.shape)
+print(paramspace2_3_one_sample.shape)
+
+SAMPLES_2A = paramspace2_1.index
+SAMPLES_2B = paramspace2_2.index
+
+commands_4 = ""
+new_paramspace_pt__4 = []
+for pt_A, pt_B in zip(SAMPLES_2A, SAMPLES_2B):
+    print(f"Patient A: {pt_A}, Patient B: {pt_B}")
+    new_paramspace_pt__4.append(str(pt_A) + "__" + str(pt_B))
+
+    commands_4 = commands_4 + f"kmc_tools simple data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{pt_A} -ci0 -cx1000000000 data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{pt_B} -ci0 -cx1000000000 union data/phase_II_patients/creating_union_germline_de_novo/from_2_to_4/germline_kmers_{pt_A}__{pt_B} -ci0 -cx1000000000 -cs1000000000\n"
+    
+paramspace_pt_4_dict = {"pt_id" : new_paramspace_pt__4}
+paramspace_pt_4_df = pd.DataFrame(paramspace_pt_4_dict)
+paramspace_pt_4_df.to_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_4.csv", index=False)
+
+O_4 = expand("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_2_to_4/plotdata_germline_{pt2A}__{pt2B}.txt", zip, pt2A=SAMPLES_2A, pt2B = SAMPLES_2B)
+
+#############################################################################################################################
+
+####################################################### 4 to 8 ##############################################################
+
+paramspace_4 = pd.read_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_4.csv", index_col='pt_id')
+SAMPLES_4 = paramspace_4.index
+
+paramspace4_1 = paramspace_4.iloc[:16, :]
+paramspace4_2 = paramspace_4.iloc[16:32, :]
+
+print(paramspace4_1.shape)
+print(paramspace4_2.shape)
+
+SAMPLES_4A = paramspace4_1.index
+SAMPLES_4B = paramspace4_2.index
+
+
+commands_8 = ""
+new_paramspace_pt__8 = []
+for pt_A, pt_B in zip(SAMPLES_4A, SAMPLES_4B):
+    print(f"Patient A: {pt_A}, Patient B: {pt_B}")
+    new_paramspace_pt__8.append(str(pt_A) + "__" + str(pt_B))
+
+    commands_8 = commands_8 + f"kmc_tools simple data/phase_II_patients/creating_union_germline_de_novo/from_2_to_4/germline_kmers_{pt_A} -ci0 -cx1000000000 data/phase_II_patients/creating_union_germline_de_novo/from_2_to_4/germline_kmers_{pt_B} -ci0 -cx1000000000 union data/phase_II_patients/creating_union_germline_de_novo/from_4_to_8/germline_kmers_{pt_A}__{pt_B} -ci0 -cx1000000000 -cs1000000000\n"
+    
+paramspace_pt_8_dict = {"pt_id" : new_paramspace_pt__8}
+paramspace_pt_8_df = pd.DataFrame(paramspace_pt_8_dict)
+paramspace_pt_8_df.to_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_8.csv", index=False)
+
+O_8 = expand("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_4_to_8/plotdata_germline_{pt4A}__{pt4B}.txt", zip, pt4A=SAMPLES_4A, pt4B = SAMPLES_4B)
+
+#############################################################################################################################
+
+####################################################### 8 to 16 #############################################################
+
+paramspace_8 = pd.read_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_8.csv", index_col='pt_id')
+SAMPLES_8 = paramspace_8.index
+
+paramspace8_1 = paramspace_8.iloc[:8, :]
+paramspace8_2 = paramspace_8.iloc[8:16, :]
+
+print(paramspace8_1.shape)
+print(paramspace8_2.shape)
+
+SAMPLES_8A = paramspace8_1.index
+SAMPLES_8B = paramspace8_2.index
+
+
+commands_16 = ""
+new_paramspace_pt__16 = []
+for pt_A, pt_B in zip(SAMPLES_8A, SAMPLES_8B):
+    print(f"Patient A: {pt_A}, Patient B: {pt_B}")
+    new_paramspace_pt__16.append(str(pt_A) + "__" + str(pt_B))
+
+    commands_16 = commands_16 + f"kmc_tools simple data/phase_II_patients/creating_union_germline_de_novo/from_4_to_8/germline_kmers_{pt_A} -ci0 -cx1000000000 data/phase_II_patients/creating_union_germline_de_novo/from_4_to_8/germline_kmers_{pt_B} -ci0 -cx1000000000 union data/phase_II_patients/creating_union_germline_de_novo/from_8_to_16/germline_kmers_{pt_A}__{pt_B} -ci0 -cx1000000000 -cs1000000000\n"
+    
+paramspace_pt_16_dict = {"pt_id" : new_paramspace_pt__16}
+paramspace_pt_16_df = pd.DataFrame(paramspace_pt_16_dict)
+paramspace_pt_16_df.to_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_16.csv", index=False)
+
+O_16 = expand("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_8_to_16/plotdata_germline_{pt8A}__{pt8B}.txt", zip, pt8A=SAMPLES_8A, pt8B = SAMPLES_8B)
+
+#############################################################################################################################
+
+####################################################### 16 to 32 ############################################################
+
+paramspace_16 = pd.read_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_16.csv", index_col='pt_id')
+SAMPLES_16 = paramspace_16.index
+
+paramspace16_1 = paramspace_16.iloc[:4, :]
+paramspace16_2 = paramspace_16.iloc[4:8, :]
+
+print(paramspace16_1.shape)
+print(paramspace16_2.shape)
+
+SAMPLES_16A = paramspace16_1.index
+SAMPLES_16B = paramspace16_2.index
+
+for ptA, ptB in zip(SAMPLES_16A, SAMPLES_16B):
+    output_folder = f"data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_16_to_32/16ptA__{ptA}/16ptB__{ptB}/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+    
+    output_folder2 = f"data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_16_to_32/16ptA__{ptA}/16ptB__{ptB}/"
+    Path(output_folder2).mkdir(parents=True, exist_ok=True)
+
+commands_32 = ""
+new_paramspace_pt__32 = []
+for pt_A, pt_B in zip(SAMPLES_16A, SAMPLES_16B):
+    print(f"Patient A: {pt_A}, Patient B: {pt_B}")
+    new_paramspace_pt__32.append("16ptA__" + str(pt_A) + "/16ptB__" + str(pt_B))
+
+    commands_32 = commands_32 + f"kmc_tools simple data/phase_II_patients/creating_union_germline_de_novo/from_8_to_16/germline_kmers_{pt_A} -ci0 -cx1000000000 data/phase_II_patients/creating_union_germline_de_novo/from_8_to_16/germline_kmers_{pt_B} -ci0 -cx1000000000 union data/phase_II_patients/creating_union_germline_de_novo/from_16_to_32/16ptA__{pt_A}/16ptB__{pt_B}/germline_kmers_union -ci0 -cx1000000000 -cs1000000000\n"
+    
+    commands_32 = commands_32 + f"kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/from_16_to_32/16ptA__{pt_A}/16ptB__{pt_B}/germline_kmers_union -ci0 -cx1000000000 histogram data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_16_to_32/16ptA__{pt_A}/16ptB__{pt_B}/plotdata_germline.txt -ci0 -cx1000000000\n"
+    
+    commands_32 = commands_32 + f"awk -F '\t' '$2!=0' data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_16_to_32/16ptA__{pt_A}/16ptB__{pt_B}/plotdata_germline.txt > data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_16_to_32/16ptA__{pt_A}/16ptB__{pt_B}/plotdata_germline.txt\n"
+
+paramspace_pt_32_dict = {"pt_id" : new_paramspace_pt__32}
+paramspace_pt_32_df = pd.DataFrame(paramspace_pt_32_dict)
+paramspace_pt_32_df.to_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_32.csv", index=False)
+
+O_32 = expand("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_16_to_32/16ptA__{pt16A}/16ptB__{pt16B}/plotdata_germline.txt", zip, pt16A=SAMPLES_16A, pt16B = SAMPLES_16B)
+
+#############################################################################################################################
+
+####################################################### 32 to 64 ############################################################
+
+paramspace_32 = pd.read_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_32.csv", index_col='pt_id')
+SAMPLES_32 = paramspace_32.index
+
+paramspace32_1 = paramspace_32.iloc[:2, :]
+paramspace32_2 = paramspace_32.iloc[2:4, :]
+
+print(paramspace32_1.shape)
+print(paramspace32_2.shape)
+
+SAMPLES_32A = paramspace32_1.index
+SAMPLES_32B = paramspace32_2.index
+
+for ptA, ptB in zip(SAMPLES_32A, SAMPLES_32B):
+    output_folder = f"data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_32_to_64/{ptA}/{ptB}/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+    
+    output_folder2 = f"data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_32_to_64/{ptA}/{ptB}/"
+    Path(output_folder2).mkdir(parents=True, exist_ok=True)
+
+commands_64 = ""
+new_paramspace_pt__64 = []
+for pt_A, pt_B in zip(SAMPLES_32A, SAMPLES_32B):
+    print(f"Patient A: {pt_A}, Patient B: {pt_B}")
+    new_paramspace_pt__64.append(str(pt_A) + "/" + str(pt_B))
+
+    commands_64 = commands_64 + f"kmc_tools simple data/phase_II_patients/creating_union_germline_de_novo/from_16_to_32/{pt_A}/germline_kmers_union -ci0 -cx1000000000 data/phase_II_patients/creating_union_germline_de_novo/from_16_to_32/{pt_B}/germline_kmers_union -ci0 -cx1000000000 union data/phase_II_patients/creating_union_germline_de_novo/from_32_to_64/{pt_A}/{pt_B}/germline_kmers_union -ci0 -cx1000000000 -cs1000000000\n"
+    
+    commands_64 = commands_64 + f"kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/from_32_to_64/{pt_A}/{pt_B}/germline_kmers_union -ci0 -cx1000000000 histogram data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_32_to_64/{pt_A}/{pt_B}/plotdata_germline.txt -ci0 -cx1000000000\n"
+    
+    commands_64 = commands_64 + f"awk -F '\t' '$2!=0' data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_32_to_64/{pt_A}/{pt_B}/plotdata_germline.txt > data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_32_to_64/{pt_A}/{pt_B}/plotdata_germline.txt\n"
+
+paramspace_pt_64_dict = {"pt_id" : new_paramspace_pt__64}
+paramspace_pt_64_df = pd.DataFrame(paramspace_pt_64_dict)
+paramspace_pt_64_df.to_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_64.csv", index=False)
+
+O_64 = expand("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_32_to_64/{pt32A}/{pt32B}/plotdata_germline.txt", zip, pt32A=SAMPLES_32A, pt32B = SAMPLES_32B)
+
+#############################################################################################################################
+
+####################################################### 64 to 128 ###########################################################
+
+paramspace_64 = pd.read_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_64.csv", index_col='pt_id')
+SAMPLES_64 = paramspace_64.index
+
+paramspace64_1 = paramspace_64.iloc[:1, :]
+paramspace64_2 = paramspace_64.iloc[1:2, :]
+
+print(paramspace64_1.shape)
+print(paramspace64_2.shape)
+
+SAMPLES_64A = paramspace64_1.index
+SAMPLES_64B = paramspace64_2.index
+
+commands_128 = ""
+new_paramspace_pt__128 = []
+for pt_A, pt_B in zip(SAMPLES_64A, SAMPLES_64B):
+    print(f"Patient A: {pt_A}, Patient B: {pt_B}")
+    new_paramspace_pt__128.append(str(pt_A) + "/" + str(pt_B))
+
+    commands_128 = commands_128 + f"kmc_tools simple data/phase_II_patients/creating_union_germline_de_novo/from_32_to_64/{pt_A}/germline_kmers_union -ci0 -cx1000000000 data/phase_II_patients/creating_union_germline_de_novo/from_32_to_64/{pt_B}/germline_kmers_union -ci0 -cx1000000000 union data/phase_II_patients/creating_union_germline_de_novo/from_64_to_128/germline_kmers_128pt_union -ci0 -cx1000000000 -cs1000000000\n"
+
+paramspace_pt_128_dict = {"pt_id" : new_paramspace_pt__128}
+paramspace_pt_128_df = pd.DataFrame(paramspace_pt_128_dict)
+paramspace_pt_128_df.to_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_128.csv", index=False)
+
+O_128 = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_64_to_128/plotdata_germline.txt"
+
+#############################################################################################################################
+
+####################################################### 128 to 130 ##########################################################
+
+paramspace_128 = pd.read_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_128.csv", index_col='pt_id')
+SAMPLES_128 = paramspace_128.index
+SAMPLES_2_left = paramspace2_3_one_sample.index
+
+print(SAMPLES_128)
+
+paramspace128_1 = paramspace_128.iloc[0, :]
+
+print(paramspace128_1.shape)
+print(paramspace2_3_one_sample.shape)
+
+commands_130 = ""
+new_paramspace_pt__130 = []
+for pt_A, pt_B in zip(SAMPLES_128, SAMPLES_2_left):
+    print(f"Patient A: {pt_A}, Patient B: {pt_B}")
+    new_paramspace_pt__130.append(str(pt_A) + "/" + str(pt_B))
+
+    commands_130 = commands_130 + f"kmc_tools simple data/phase_II_patients/creating_union_germline_de_novo/from_64_to_128/germline_kmers_128pt_union -ci0 -cx1000000000 data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{pt_B} -ci0 -cx1000000000 union data/phase_II_patients/creating_union_germline_de_novo/from_128_to_130/germline_kmers_130pt_union -ci0 -cx1000000000 -cs1000000000\n"
+
+paramspace_pt_130_dict = {"pt_id" : new_paramspace_pt__130}
+paramspace_pt_130_df = pd.DataFrame(paramspace_pt_130_dict)
+paramspace_pt_130_df.to_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_130.csv", index=False)
+
+O_130 = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_128_to_130/plotdata_germline.txt"
+
+#############################################################################################################################
+
+####################################################### 130 to 131 ##########################################################
+
+paramspace_130 = pd.read_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_130.csv", index_col='pt_id')
+SAMPLES_130 = paramspace_130.index
+SAMPLES_1_left = paramspace1_5_one_sample.index
+
+paramspace130_1 = paramspace_130.iloc[0, :]
+
+print(paramspace130_1.shape)
+print(paramspace1_5_one_sample.shape)
+
+OUTPUT_PT_FOLDER_1E_one_left = paramspace1_5_one_sample["output_path_unique_kmers"]
+
+commands_131 = ""
+new_paramspace_pt__131 = []
+for pt_A, pt_B in zip(SAMPLES_130, SAMPLES_1_left):
+    print(f"Patient A: {pt_A}, Patient B: {pt_B}")
+    new_paramspace_pt__131.append(str(pt_A) + "/" + str(pt_B))
+
+    commands_131 = commands_131 + f"kmc_tools simple data/phase_II_patients/creating_union_germline_de_novo/from_128_to_130/germline_kmers_130pt_union -ci0 -cx1000000000 data/phase_II_patients/{pt_B}/{str(Path(OUTPUT_PT_FOLDER_1E_one_left[pt_B]))}/de_novo_germline/germline_kmers -ci0 -cx1000000000 union data/phase_II_patients/creating_union_germline_de_novo/UNION_germline_kmers -ci0 -cx1000000000 -cs1000000000\n"
+
+paramspace_pt_131_dict = {"pt_id" : new_paramspace_pt__131}
+paramspace_pt_131_df = pd.DataFrame(paramspace_pt_131_dict)
+paramspace_pt_131_df.to_csv("data/phase_II_patients/creating_union_germline_de_novo/paramspace_131.csv", index=False)
+
+O_131 = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_germline_filtered.txt"
+
+#############################################################################################################################
+#############################################################################################################################
+
+DE_NOVO_UNION = "data/phase_II_patients/creating_union_germline_de_novo/UNION_germline_kmers.kmc_pre",
+DE_NOVO_K50_REF_UNION = "data/phase_II_patients/germline_union_de_novo_and_k50_and_reference.kmc_pre"
+DE_NOVO_K50_FILTERED = "data/phase_II_patients/plotdata_germline_union_de_novo_and_k50_filtered.txt"
+DE_NOVO_K50_REF_FILTERED = "data/phase_II_patients/plotdata_germline_union_de_novo_and_k50_and_reference_filtered.txt"
+
+rule all: 
+    input: O_2_v1, O_2_v2, O_4, O_8, O_16, O_32, O_64, O_128, O_130, O_131, DE_NOVO_UNION, DE_NOVO_K50_REF_UNION, DE_NOVO_K50_FILTERED, DE_NOVO_K50_REF_FILTERED
+    
+    
+    
+rule create_union_germlines_2_v1_de_novo:
+    input:
+        germline_files_1 = expand("data/phase_II_patients/{pt}/{folder}/de_novo_germline/germline_kmers.kmc_pre", zip, pt=SAMPLES, folder = OUTPUT_PT_FOLDER),
+        paramspace1 = "data/metadata/paramspace_phaseII.csv"
+    output:
+        germline_files_2 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{ptA}__{ptB}.kmc_pre", zip, ptA=SAMPLES_1A, ptB = SAMPLES_1B)
+    params:
+        commandsp = commands_2_v1
+    resources: 
+        mem_mb = 50000, 
+        time = "40:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell:
+        "{params.commandsp}"
+        
+
+rule create_union_germlines_2_v2_de_novo: 
+    input:
+        germline_files_1 = expand("data/phase_II_patients/{pt}/{folder}/de_novo_germline/germline_kmers.kmc_pre", zip, pt=SAMPLES, folder = OUTPUT_PT_FOLDER),
+        paramspace1 = "data/metadata/paramspace_phaseII.csv"
+    output:
+        germline_files_2 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{ptC}__{ptD}.kmc_pre", zip, ptC=SAMPLES_1C, ptD = SAMPLES_1D)
+    params:
+        commandsp = commands_2_v2
+    resources: 
+        mem_mb = 50000, 
+        time = "40:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell:
+        "{params.commandsp}"
+        
+
+rule make_plotfile_germline_union_2_v1_de_novo:
+    input: 
+        kmers_pre = "data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{ptA}__{ptB}.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_1_to_2/pt_AB/plotdata_germline_{ptA}__{ptB}.txt")
+    resources: 
+        mem_mb = 200000, 
+        time = "4:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{wildcards.ptA}__{wildcards.ptB} -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+        #"kmc_scripts/kmers_transform.py"
+
+
+rule filter_plotfile_germline_union_2_v1_de_novo:
+    input: 
+        plotdata = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_1_to_2/pt_AB/plotdata_germline_{ptA}__{ptB}.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_1_to_2/pt_AB/plotdata_germline_{ptA}__{ptB}.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+        
+
+rule make_plotfile_germline_union_2_v2_de_novo:
+    input: 
+        kmers_pre = "data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{ptC}__{ptD}.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_1_to_2/pt_CD/plotdata_germline_{ptC}__{ptD}.txt")
+    resources: 
+        mem_mb = 200000, 
+        time = "4:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{wildcards.ptC}__{wildcards.ptD} -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+        #"kmc_scripts/kmers_transform.py"
+
+
+rule filter_plotfile_germline_union_2_v2_de_novo:
+    input: 
+        plotdata = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_1_to_2/pt_CD/plotdata_germline_{ptC}__{ptD}.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_1_to_2/pt_CD/plotdata_germline_{ptC}__{ptD}.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+        
+
+########################################################################################################################################################
+
+rule create_union_germlines_4_de_novo:
+    input:
+        germline_files_1_to_2_v1 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{ptA}__{ptB}.kmc_pre", zip, ptA=SAMPLES_1A, ptB = SAMPLES_1B),
+        germline_files_1_to_2_v2 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{ptC}__{ptD}.kmc_pre", zip, ptC=SAMPLES_1C, ptD = SAMPLES_1D)
+    output:
+        germline_files_4 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_2_to_4/germline_kmers_{pt2A}__{pt2B}.kmc_pre", zip, pt2A=SAMPLES_2A, pt2B = SAMPLES_2B)
+    params:
+        commandsp = commands_4
+    resources: 
+        mem_mb = 50000, 
+        time = "40:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell:
+        "{params.commandsp}"
+
+
+rule make_plotfile_germline_union_4_de_novo:
+    input: 
+        kmers_pre = "data/phase_II_patients/creating_union_germline_de_novo/from_2_to_4/germline_kmers_{pt2A}__{pt2B}.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_2_to_4/plotdata_germline_{pt2A}__{pt2B}.txt")
+    resources: 
+        mem_mb = 200000, 
+        time = "4:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/from_2_to_4/germline_kmers_{wildcards.pt2A}__{wildcards.pt2B} -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule filter_plotfile_germline_union_4_de_novo:
+    input: 
+        plotdata = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_2_to_4/plotdata_germline_{pt2A}__{pt2B}.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_2_to_4/plotdata_germline_{pt2A}__{pt2B}.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+
+########################################################################################################################################################
+        
+rule create_union_germlines_8_de_novo:
+    input:
+        germline_files_2_to_4 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_2_to_4/germline_kmers_{pt2A}__{pt2B}.kmc_pre", zip, pt2A=SAMPLES_2A, pt2B = SAMPLES_2B)
+    output:
+        germline_files_8 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_4_to_8/germline_kmers_{pt4A}__{pt4B}.kmc_pre", zip, pt4A=SAMPLES_4A, pt4B = SAMPLES_4B)
+    params:
+        commandsp = commands_8
+    resources: 
+        mem_mb = 50000, 
+        time = "40:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell:
+        "{params.commandsp}"
+
+
+rule make_plotfile_germline_union_8_de_novo:
+    input: 
+        kmers_pre = "data/phase_II_patients/creating_union_germline_de_novo/from_4_to_8/germline_kmers_{pt4A}__{pt4B}.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_4_to_8/plotdata_germline_{pt4A}__{pt4B}.txt")
+    resources: 
+        mem_mb = 200000, 
+        time = "4:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/from_4_to_8/germline_kmers_{wildcards.pt4A}__{wildcards.pt4B} -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule filter_plotfile_germline_union_8_de_novo:
+    input: 
+        plotdata = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_4_to_8/plotdata_germline_{pt4A}__{pt4B}.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_4_to_8/plotdata_germline_{pt4A}__{pt4B}.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+
+########################################################################################################################################################
+        
+rule create_union_germlines_16_de_novo:
+    input:
+        germline_files_4_to_8 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_4_to_8/germline_kmers_{pt4A}__{pt4B}.kmc_pre", zip, pt4A=SAMPLES_4A, pt4B = SAMPLES_4B)
+    output:
+        germline_files_16 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_8_to_16/germline_kmers_{pt8A}__{pt8B}.kmc_pre", zip, pt8A=SAMPLES_8A, pt8B = SAMPLES_8B)
+    params:
+        commandsp = commands_16
+    resources: 
+        mem_mb = 50000, 
+        time = "10:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell:
+        "{params.commandsp}"
+        
+
+rule make_plotfile_germline_union_16_de_novo:
+    input: 
+        kmers_pre = "data/phase_II_patients/creating_union_germline_de_novo/from_8_to_16/germline_kmers_{pt8A}__{pt8B}.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_8_to_16/plotdata_germline_{pt8A}__{pt8B}.txt")
+    resources: 
+        mem_mb = 200000, 
+        time = "4:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/from_8_to_16/germline_kmers_{wildcards.pt8A}__{wildcards.pt8B} -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule filter_plotfile_germline_union_16_de_novo:
+    input: 
+        plotdata = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_8_to_16/plotdata_germline_{pt8A}__{pt8B}.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_8_to_16/plotdata_germline_{pt8A}__{pt8B}.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+
+########################################################################################################################################################
+
+rule create_union_germlines_32_de_novo:
+    input:
+        germline_files_8_to_16 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_8_to_16/germline_kmers_{pt8A}__{pt8B}.kmc_pre", zip, pt8A=SAMPLES_8A, pt8B = SAMPLES_8B)
+    output:
+        germline_files_32 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_16_to_32/16ptA__{pt16A}/16ptB__{pt16B}/germline_kmers_union.kmc_pre", zip, pt16A=SAMPLES_16A, pt16B = SAMPLES_16B),
+        O_32_rule = expand("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_16_to_32/16ptA__{pt16A}/16ptB__{pt16B}/plotdata_germline.txt", zip, pt16A=SAMPLES_16A, pt16B = SAMPLES_16B)
+    params:
+        commandsp = commands_32
+    resources: 
+        mem_mb = 100000, 
+        time = "5:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell:
+        "{params.commandsp}"
+
+'''
+rule make_plotfile_germline_union_32_de_novo:
+    input: 
+        kmers_pre = "data/phase_II_patients/creating_union_germline_de_novo/from_16_to_32/16ptA__{pt16A}/16ptB__{pt16B}/germline_kmers_union.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_16_to_32/16ptA__{pt16A}/16ptB__{pt16B}/plotdata_germline.txt")
+    resources: 
+        mem_mb = 200000, 
+        time = "6:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/from_16_to_32/16ptA__{wildcards.pt16A}/16ptB__{wildcards.pt16B}/germline_kmers_union -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule filter_plotfile_germline_union_32_de_novo:
+    input: 
+        plotdata = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_16_to_32/16ptA__{pt16A}/16ptB__{pt16B}/plotdata_germline.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_16_to_32/16ptA__{pt16A}/16ptB__{pt16B}/plotdata_germline.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "5:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+'''    
+########################################################################################################################################################
+
+rule create_union_germlines_64_de_novo:
+    input:
+        germline_files_16_to_32 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_16_to_32/16ptA__{pt16A}/16ptB__{pt16B}/germline_kmers_union.kmc_pre", zip, pt16A=SAMPLES_16A, pt16B = SAMPLES_16B)
+    output:
+        germline_files_64 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_32_to_64/{pt32A}/{pt32B}/germline_kmers_union.kmc_pre", zip, pt32A=SAMPLES_32A, pt32B = SAMPLES_32B),
+        O_64_rule = expand("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_32_to_64/{pt32A}/{pt32B}/plotdata_germline.txt", zip, pt32A=SAMPLES_32A, pt32B = SAMPLES_32B)
+    params:
+        commandsp = commands_64
+    resources: 
+        mem_mb = 100000, 
+        time = "5:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell:
+        "{params.commandsp}"
+
+'''
+rule make_plotfile_germline_union_64_de_novo:
+    input: 
+        kmers_pre = "data/phase_II_patients/creating_union_germline_de_novo/from_32_to_64/{pt32A}/{pt32B}/germline_kmers_union.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_32_to_64/{pt32A}/{pt32B}/plotdata_germline.txt")
+    resources: 
+        mem_mb = 200000, 
+        time = "6:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/from_32_to_64/{wildcards.pt32A}/{wildcards.pt32B}/germline_kmers_union -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule filter_plotfile_germline_union_64_de_novo:
+    input: 
+        plotdata = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_32_to_64/{pt32A}/{pt32B}/plotdata_germline.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_32_to_64/{pt32A}/{pt32B}/plotdata_germline.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "5:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+'''
+########################################################################################################################################################
+
+rule create_union_germlines_128_de_novo:
+    input:
+        germline_files_32_to_64 = expand("data/phase_II_patients/creating_union_germline_de_novo/from_32_to_64/{pt32A}/{pt32B}/germline_kmers_union.kmc_pre", zip, pt32A=SAMPLES_32A, pt32B = SAMPLES_32B)
+    output:
+        germline_files_128 = "data/phase_II_patients/creating_union_germline_de_novo/from_64_to_128/germline_kmers_128pt_union.kmc_pre"
+    params:
+        commandsp = commands_128
+    resources: 
+        mem_mb = 100000, 
+        time = "4:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell:
+        "{params.commandsp}"
+        
+
+rule make_plotfile_germline_union_128_de_novo:
+    input: 
+        kmers_pre = "data/phase_II_patients/creating_union_germline_de_novo/from_64_to_128/germline_kmers_128pt_union.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_64_to_128/plotdata_germline.txt")
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/from_64_to_128/germline_kmers_128pt_union -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule filter_plotfile_germline_union_128_de_novo:
+    input: 
+        plotdata = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_64_to_128/plotdata_germline.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_64_to_128/plotdata_germline.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+        
+########################################################################################################################################################
+
+rule create_union_germlines_130_de_novo:
+    input:
+        germline_files_64_to_128 = "data/phase_II_patients/creating_union_germline_de_novo/from_64_to_128/germline_kmers_128pt_union.kmc_pre",
+        germline_kmers_2_left = expand("data/phase_II_patients/creating_union_germline_de_novo/from_1_to_2/germline_kmers_{ptB}.kmc_pre", ptB = SAMPLES_2_left)
+    output:
+        germline_files_130 = "data/phase_II_patients/creating_union_germline_de_novo/from_128_to_130/germline_kmers_130pt_union.kmc_pre"
+    params:
+        commandsp = commands_130
+    resources: 
+        mem_mb = 100000, 
+        time = "4:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell:
+        "{params.commandsp}"
+        
+
+rule make_plotfile_germline_union_130_de_novo:
+    input: 
+        kmers_pre = "data/phase_II_patients/creating_union_germline_de_novo/from_128_to_130/germline_kmers_130pt_union.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_128_to_130/plotdata_germline.txt")
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/from_128_to_130/germline_kmers_130pt_union -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule filter_plotfile_germline_union_130_de_novo:
+    input: 
+        plotdata = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files/from_128_to_130/plotdata_germline.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_files_filtered/from_128_to_130/plotdata_germline.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+
+########################################################################################################################################################
+
+rule create_union_germlines_131_de_novo:
+    input:
+        germline_files_128_to_130 = "data/phase_II_patients/creating_union_germline_de_novo/from_128_to_130/germline_kmers_130pt_union.kmc_pre"
+    output:
+        germline_files_131 = "data/phase_II_patients/creating_union_germline_de_novo/UNION_germline_kmers.kmc_pre"
+    params:
+        commandsp = commands_131
+    resources: 
+        mem_mb = 100000, 
+        time = "4:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell:
+        "{params.commandsp}"
+
+
+rule make_plotfile_germline_union_131_de_novo:
+    input: 
+        kmers_pre = "data/phase_II_patients/creating_union_germline_de_novo/UNION_germline_kmers.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/creating_union_germline_de_novo/plotdata_germline_UNION.txt")
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/creating_union_germline_de_novo/UNION_germline_kmers -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule filter_plotfile_germline_union_131_de_novo:
+    input: 
+        plotdata = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_germline_UNION.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/creating_union_germline_de_novo/plotdata_germline_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+        
+
+############################ combine with union germline k = 50 ###################################
+
+rule phase2_merge_de_novo_and_k50: 
+    input: 
+        kmers_de_novo_pre = "data/phase_II_patients/creating_union_germline_de_novo/UNION_germline_kmers.kmc_pre",
+        kmers_pre = "data/phase_II_patients/creating_union_germline/UNION_germline_kmers.kmc_pre"
+    output: 
+        union_pre = "data/phase_II_patients/germline_union_de_novo_and_k50.kmc_pre"
+    resources: 
+        mem_mb = 100000, 
+        time = "4:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools simple data/phase_II_patients/creating_union_germline/UNION_germline_kmers -ci0 -cx1000000000   data/phase_II_patients/creating_union_germline_de_novo/UNION_germline_kmers -ci0 -cx1000000000 union data/phase_II_patients/germline_union_de_novo_and_k50 -ci0 -cs1000000000 -cx1000000000 -ocleft"
+
+
+rule phase2_make_plotfile_germline_union_de_novo_and_k50:
+    input: 
+        kmers_pre = "data/phase_II_patients/germline_union_de_novo_and_k50.kmc_pre"
+    output: 
+        plotdata = temp("data/phase_II_patients/plotdata_germline_union_de_novo_and_k50.txt")
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/germline_union_de_novo_and_k50 -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+rule phase2_filter_plotfile_germline_union_de_novo_and_k50:
+    input: 
+        plotdata = "data/phase_II_patients/plotdata_germline_union_de_novo_and_k50.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/plotdata_germline_union_de_novo_and_k50_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+
+#################################### combine with reference #######################################
+
+
+rule phase2_combine_reference_genome_and_union_germline_kmersets:
+    input:
+        reference = "data/reference_genome_kmers.kmc_pre",
+        union_and_de_novo_union_germline = "data/phase_II_patients/germline_union_de_novo_and_k50.kmc_pre"
+    output: 
+        kmers_pre = "data/phase_II_patients/germline_union_de_novo_and_k50_and_reference.kmc_pre",
+        kmers_suf = "data/phase_II_patients/germline_union_de_novo_and_k50_and_reference.kmc_suf"
+    threads: 1
+    resources: 
+        mem_mb = 100000, 
+        time = "4:00:00"
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        "kmc_tools simple data/reference_genome_kmers -ci0 -cx1000000000 data/phase_II_patients/germline_union_de_novo_and_k50 -ci0 -cx1000000000 union data/phase_II_patients/germline_union_de_novo_and_k50_and_reference -ci0 -cx1000000000 -cs1000000000"
+        
+
+
+rule phase2_make_plotfile_germline_union_reference_genome_and_union_germline_kmersets:
+    input: 
+        kmers_pre = "data/phase_II_patients/germline_union_de_novo_and_k50_and_reference.kmc_pre",
+        kmers_suf = "data/phase_II_patients/germline_union_de_novo_and_k50_and_reference.kmc_suf"
+    output: 
+        plotdata = temp("data/phase_II_patients/plotdata_germline_union_de_novo_and_k50_and_reference.txt")
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/germline_union_de_novo_and_k50_and_reference -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+rule phase2_filter_plotfile_germline_union_reference_genome_and_union_germline_kmersets:
+    input: 
+        plotdata = "data/phase_II_patients/plotdata_germline_union_de_novo_and_k50_and_reference.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/plotdata_germline_union_de_novo_and_k50_and_reference_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"

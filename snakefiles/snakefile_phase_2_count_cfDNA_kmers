@@ -1,0 +1,74 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+paramspace = pd.read_csv("data/metadata/paramspace_cfDNA_phaseII.csv", index_col='cfDNA_folder')
+cfDNA_FILE_PATHS = paramspace["cfDNA_bam_path"]
+UNIQUE_KMERS_PATHS = paramspace["unique_kmers_folder"]
+SAMPLES = paramspace["pt_id"]
+FOLDERS = paramspace.index
+
+
+KMERS_COUNTED = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers.kmc_pre", zip, pt = SAMPLES, output_f = FOLDERS)
+OUTPUT_FILTERED = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_cfDNA_filtered.txt", zip, pt = SAMPLES, output_f = FOLDERS)
+
+
+for pt, fd in zip(SAMPLES, FOLDERS):
+    tmp_folder = "tmp_cfDNA/phase_II_patients/tmp_cfDNA_" + str(pt) + "/" + str(fd)  + "_filtered_cfDNA_files"
+    Path(tmp_folder).mkdir(parents=True, exist_ok=True)
+    
+    output_folder = "data/phase_II_patients/" + str(pt) + "/" + str(fd)  + "/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+
+rule all: 
+    input: KMERS_COUNTED, OUTPUT_FILTERED
+
+
+######COUNT cfDNA K-MERS###############
+
+rule count_cfDNA_kmers_filtered_cfDNA:
+    input:
+        bam_file = lambda wildcards: str(Path(cfDNA_FILE_PATHS[wildcards.output_f]))
+    output: 
+        kmers_pre = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers.kmc_pre", 
+        kmers_suf = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers.kmc_suf"
+    resources: 
+        mem_mb = 300000, 
+        time = "12:00:00"
+    threads: 1
+    params:
+        tmpdir = "tmp_cfDNA/phase_II_patients/tmp_cfDNA_{pt}/{output_f}_filtered_cfDNA_files"
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        'kmc -k50 -m300 -t{threads} -ci0 -cx1000000000 -cs1000000000 -fbam {input.bam_file} data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/cfDNA_kmers {params.tmpdir}' 
+
+
+rule PHASE_II_make_plotfile_cfDNA:
+    input: 
+        kmers_pre = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers.kmc_pre", 
+        kmers_suf = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/cfDNA_kmers.kmc_suf"
+    output: 
+        plotdata = temp("data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_cfDNA.txt")
+    resources: 
+        mem_mb = 75000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        'kmc_tools transform data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/cfDNA_kmers -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000'
+        
+
+rule PHASE_II_filter_plotfile_cfDNA:
+    input:
+        plotdata = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_cfDNA.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_cfDNA_filtered.txt"
+    resources: 
+        mem_mb = 50000, 
+        time = "2:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"    

@@ -1,0 +1,15 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+
+PLOT = "data/Batch_effect_check/all_germline_filtered_bams_tumor_ci5_cs1e9/batch_effect_check.png"
+
+rule all:
+    input: PLOT
+    
+rule plot_batcheffect_check: 
+    input: input = "data/pt/folder/all_germline_filtered_bams_tumor_ci5_cs1e9/cfDNA_kmers_substracted_tumor_and_union_germline_histogram_filtered.txt"
+    output: plot = "data/Batch_effect_check/all_germline_filtered_bams_tumor_ci5_cs1e9/batch_effect_check.png"
+    conda: "envs/ctDNA.yml"
+    script: "scripts_plotting/Check_batcheffect.R"

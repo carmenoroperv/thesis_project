@@ -1,0 +1,57 @@
+#blastdbcmd command and output for RefSeq Eukaryotic Representative Genome Database
+
+Command: blastdbcmd -info -db ref_euk_rep_genomes
+Output: Database: RefSeq Eukaryotic Representative Genome Database
+        12,971,553 sequences; 1,087,083,541,440 total bases
+
+        Date: May 12, 2022  5:00 AM     Longest sequence: 2,000,000,000 bases
+
+        BLASTDB Version: 5
+
+
+
+#blastdbcmd command and output for Refseq prokaryote representative genomes
+
+Command: blastdbcmd -info -db ref_prok_rep_genomes
+Output: Database: Refseq prokaryote representative genomes (contains refseq assembly)
+        848,875 sequences; 68,075,588,068 total bases
+
+        Date: May 8, 2022  3:26 AM      Longest sequence: 13,173,116 bases
+
+        BLASTDB Version: 5
+
+
+
+#blastdbcmd command and output for Refseq viroids representative genomes
+
+Command: blastdbcmd -info -db ref_viroids_rep_genomes
+Output: Database: Refseq viroids representative genomes
+        50 sequences; 16,791 total bases
+
+        Date: Nov 6, 2021  6:13 PM      Longest sequence: 434 bases
+
+        BLASTDB Version: 5
+
+
+
+#blastdbcmd command and output for Refseq viruses representative genomes
+
+Command: blastdbcmd -info -db ref_viruses_rep_genomes
+Output: Database: Refseq viruses representative genomes
+        15,002 sequences; 474,720,826 total bases
+
+        Date: May 15, 2022  7:26 AM     Longest sequence: 2,473,870 bases
+
+        BLASTDB Version: 5
+
+
+
+#blastdbcmd command and output for the database that combines all 4 databases
+
+Command: blastdbcmd -info -db ref_rep_genomes_all
+Output: Database: RefSeq Representative Genomes: eukaryotes, prokaryotes, viroids, viruses
+        13,835,480 sequences; 1,155,633,867,125 total bases
+
+        Date: May 15, 2022  7:26 AM     Longest sequence: 2,000,000,000 bases
+
+        BLASTDB Version: 5

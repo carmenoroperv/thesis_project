@@ -1,0 +1,57 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+####MAKE THE TMP FOLDER WITH WILDCARD NAME!
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseI_wo4816.csv", index_col='pt_id')
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+#paramspace_cfDNA = pd.read_csv("data/metadata/paramspace_cfDNA_phaseI_wo5048and4816.csv", index_col='cfDNA_folder')
+#UNIQUE_KMERS_PATHS_CFDNA_PARAMSPACE = paramspace_cfDNA["unique_kmers_folder"]
+#SAMPLES_CFDNA = paramspace_cfDNA["pt_id"]
+#FOLDERS_CFDNA = paramspace_cfDNA.index
+
+
+OUTPUT_CORRECT_KMERS = expand("blasting/results/all_germline_filtered_bams_tumor_ci5_cs1e9/correct_kmers_NEWY/blasted_kmers_correct_{pt}.csv", pt=SAMPLES)
+OUTPUT_ALL_ORGANISMS = expand("blasting/results/all_germline_filtered_bams_tumor_ci5_cs1e9/all_matched_organisms_NEWY/blast_all_organisms_{pt}.csv", pt=SAMPLES)
+OUTPUT_CRC_ORGANISMS = expand("blasting/results/all_germline_filtered_bams_tumor_ci5_cs1e9/CRC_matched_orgnanisms_NEWY/blast_CRC_organisms_{pt}.csv", pt=SAMPLES)
+
+rule all: 
+    input:  OUTPUT_CORRECT_KMERS, OUTPUT_ALL_ORGANISMS, OUTPUT_CRC_ORGANISMS, "blasting/Overlap_NEWY.csv"
+
+####COUNT TUMOR#####
+
+rule analyze_blast_results:
+    input:
+        unmapped_kmers_pt = lambda wildcards: str("data/" + str(wildcards.pt) +  "/" + str(Path(OUTPUT_PT_FOLDER[wildcards.pt])) + "/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unmapped_kmers.fasta"),
+        blast_pt = "blasting/results/all_germline_filtered_bams_tumor_ci5_cs1e9/unmapped_kmers_blast_{pt}.tsv"
+    output: 
+        correct_kmers = "blasting/results/all_germline_filtered_bams_tumor_ci5_cs1e9/correct_kmers_NEWY/blasted_kmers_correct_{pt}.csv",
+        all_organisms = "blasting/results/all_germline_filtered_bams_tumor_ci5_cs1e9/all_matched_organisms_NEWY/blast_all_organisms_{pt}.csv",
+        crc_organisms = "blasting/results/all_germline_filtered_bams_tumor_ci5_cs1e9/CRC_matched_orgnanisms_NEWY/blast_CRC_organisms_{pt}.csv"
+    resources: 
+        mem_mb = 50000, 
+        time = "6:00:00"
+    params:
+        patient = "{pt}"
+    conda: 
+        "envs/ctDNA.yml"
+    script:
+        "blasting/analyze_blasting_results_all_pt.R"
+        
+        
+
+rule find_overlap_cfDNA_blast:
+    input:
+        unmapped_kmers_pt = expand("blasting/results/all_germline_filtered_bams_tumor_ci5_cs1e9/correct_kmers/blasted_kmers_correct_{pt}.csv", pt=SAMPLES)
+    output: 
+        overlap = "blasting/Overlap_NEWY.csv"
+    resources: 
+        mem_mb = 50000, 
+        time = "8:00:00"
+    conda: 
+        "envs/ctDNA.yml"
+    script:
+        "blasting/Find_overlap_cfDNA_and_blasted_kmers.R"

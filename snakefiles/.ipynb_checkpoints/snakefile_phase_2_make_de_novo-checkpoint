@@ -1,0 +1,128 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+
+
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseII.csv", index_col='pt_id')
+TUMOR_FILES = paramspace["tumor_bam_path"]
+GERMLINE_FILES = paramspace["germline_bam_path"]
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+
+OUTPUT_VCF_GZ = expand("data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline.vcf.gz", zip, pt_normal=SAMPLES, output_f_normal = OUTPUT_PT_FOLDER)
+
+OUTPUT_TABIX = expand("data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline_norm_index.vcf.gz", zip, pt_normal=SAMPLES, output_f_normal = OUTPUT_PT_FOLDER)
+
+OUTPUT_FASTA = expand("data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline.fasta", zip, pt_normal=SAMPLES, output_f_normal = OUTPUT_PT_FOLDER)
+
+
+rule all: 
+    input: OUTPUT_FASTA, OUTPUT_VCF_GZ, OUTPUT_TABIX
+
+
+
+
+
+rule PHASE_II_de_novo_pileup:
+    input: 
+        bam_file = lambda wildcards: str(Path(GERMLINE_FILES[wildcards.pt_normal])),
+        fasta_file = "../../../MomaReference/BACKUP/hg38/software_indexes/bwa/GCA_000001405.15_GRCh38_no_alt_analysis_set.GRC_exclusions_masked.fna"
+    output: 
+        gz_file = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline.vcf.gz"
+    resources: 
+        mem_mb = 400000, 
+        time = "60:00:00"
+    conda: "envs/conda_samtools.yml"
+    shell: 
+        "bcftools mpileup -O u --ignore-RG -f {input.fasta_file} {input.bam_file} | bcftools call -m -O z -v > {output.gz_file}"
+
+
+rule PHASE_II_de_novo_normalize_indels: 
+    input: 
+        gz_file = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline.vcf.gz",
+        fasta_file = "../../../MomaReference/BACKUP/hg38/software_indexes/bwa/GCA_000001405.15_GRCh38_no_alt_analysis_set.GRC_exclusions_masked.fna"
+    output: 
+        norm_file = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline.norm.vcf.gz"
+    resources: 
+        mem_mb = 100000, 
+        time = "1:00:00"
+    conda: "envs/conda_samtools.yml"
+    shell: 
+        "bcftools norm -f {input.fasta_file} {input.gz_file} -c w -m +any -Oz -o {output.norm_file}"
+
+
+
+rule PHASE_II_de_novo_tabix: 
+    input: 
+        gz_file = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline.norm.vcf.gz"
+    output: 
+        gz_index_file = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline_norm_index.vcf.gz"
+    resources: 
+        mem_mb = 100000, 
+        time = "1:00:00"
+    conda: "envs/conda_samtools.yml"
+    shell: 
+        "tabix -f {input.gz_file} > {output.gz_index_file}"
+
+
+
+rule PHASE_II_de_novo_make_fasta: 
+    input: 
+        gz_index_file = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline_norm_index.vcf.gz",
+        fasta_file = "../../../MomaReference/BACKUP/hg38/software_indexes/bwa/GCA_000001405.15_GRCh38_no_alt_analysis_set.GRC_exclusions_masked.fna",
+        gz_file = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline.vcf.gz",
+        gz_norm_file = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline.norm.vcf.gz"
+    output: 
+        fasta_file = "data/phase_II_patients/{pt_normal}/{output_f_normal}/de_novo_germline/germline.fasta"
+    resources: 
+        mem_mb = 100000, 
+        time = "1:00:00"
+    conda: "envs/conda_samtools.yml"
+    shell: 
+        "bcftools consensus -H A -f {input.fasta_file} {input.gz_norm_file} > {output.fasta_file}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

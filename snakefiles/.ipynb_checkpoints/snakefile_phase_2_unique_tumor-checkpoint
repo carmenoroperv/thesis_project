@@ -1,0 +1,80 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+####MAKE THE TMP FOLDER WITH WILDCARD NAME!
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseII.csv", index_col='pt_id')
+TUMOR_FILES = paramspace["tumor_bam_path"]
+GERMLINE_FILES = paramspace["germline_bam_path"]
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+OUTPUT_UNIQUE = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/unique_tumor_kmers.kmc_pre", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+
+UNIQUE_PLOTDATA_FILTERED = expand("data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_unique_tumor_kmers_filtered.txt", zip, pt=SAMPLES, output_f = OUTPUT_PT_FOLDER)
+
+for pt, fd in zip(SAMPLES, OUTPUT_PT_FOLDER):
+    output_folder = "data/phase_II_patients/" + str(pt) + "/" + str(fd)  + "/"
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+
+rule all: 
+    input: OUTPUT_UNIQUE, UNIQUE_PLOTDATA_FILTERED
+
+
+
+####INTERSECTION####
+
+rule PHASE_2_subtract_tumor_germline_all_germline_filtered_bams_tumor_ci5_cs1e9_de_novo_reference:
+    input:
+        tumor_pre = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/tumor_kmers.kmc_pre",
+        tumor_suf = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/tumor_kmers.kmc_suf",
+        germline_pre = "data/phase_II_patients/germline_union_de_novo_and_k50_and_reference.kmc_pre",
+        germline_suf = "data/phase_II_patients/germline_union_de_novo_and_k50_and_reference.kmc_suf"
+    output: 
+        unique_tumor_kmers_pre = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/unique_tumor_kmers.kmc_pre",
+        unique_tumor_kmers_suf = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/unique_tumor_kmers.kmc_suf"
+    resources: 
+        mem_mb = 200000, 
+        time = "6:00:00"
+    threads: 1
+    conda: 
+        "envs/ctDNA.yml"
+    shell:
+        "kmc_tools simple data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/tumor_kmers -ci5 -cx1000000000 data/phase_II_patients/germline_union_de_novo_and_k50_and_reference -ci0 -cx1000000000 kmers_subtract data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/unique_tumor_kmers -ci0 -cx1000000000 -cs1000000000"
+     
+        
+        
+#########################################################################
+
+
+rule PHASE_2_make_plotfile_unique_tumor_all_germline_filtered_bams_tumor_ci5_cs1e9_de_novo_reference:
+    input: 
+        kmers_pre = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/unique_tumor_kmers.kmc_pre",
+        kmers_suf = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/unique_tumor_kmers.kmc_suf"
+    output: 
+        plotdata = temp("data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_unique_tumor_kmers.txt")
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "kmc_tools transform data/phase_II_patients/{wildcards.pt}/{wildcards.output_f}/final_pipeline/unique_tumor_kmers -ci0 -cx1000000000 histogram {output.plotdata} -ci0 -cx1000000000"
+
+
+
+rule PHASE_2_filter_plotfile_unique_tumor_all_germline_filtered_bams_tumor_ci5_cs1e9_de_novo_reference:
+    input:
+        plotdata = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_unique_tumor_kmers.txt"
+    output: 
+        plotdata_filtered = "data/phase_II_patients/{pt}/{output_f}/final_pipeline/plotdata_unique_tumor_kmers_filtered.txt"
+    resources: 
+        mem_mb = 100000, 
+        time = "3:00:00"
+    conda:
+        "envs/ctDNA.yml"
+    shell: 
+        "awk -F '\t' '$2!=0' {input.plotdata} > {output.plotdata_filtered}"
+

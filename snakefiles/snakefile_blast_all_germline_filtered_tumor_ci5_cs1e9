@@ -1,0 +1,34 @@
+import pandas as pd
+from pathlib import Path
+import os
+
+####MAKE THE TMP FOLDER WITH WILDCARD NAME!
+
+paramspace = pd.read_csv("data/metadata/paramspace_phaseI.csv", index_col='pt_id')
+TUMOR_FILES = paramspace["tumor_bam_path"]
+SAMPLES = paramspace.index
+OUTPUT_PT_FOLDER = paramspace["output_path_unique_kmers"]
+
+
+UNMAPPED_KMERS_BLASTED = expand("blasting/results/all_germline_filtered_bams_tumor_ci5_cs1e9/unmapped_kmers_blast_{pt}.tsv", pt=SAMPLES)
+
+
+
+rule all: 
+    input: UNMAPPED_KMERS_BLASTED
+
+rule blast_all_germline_filtered_tumor_ci5_cs1e9_phaseI:
+    input: 
+        unmapped_kmers = lambda wildcards: str("data/" + str(wildcards.pt) + "/" + str(Path(OUTPUT_PT_FOLDER[wildcards.pt])) +  "/all_germline_filtered_bams_tumor_ci5_cs1e9/mapping_to_reference/unmapped_kmers.fasta"),
+    output: 
+        blasted_kmers = "blasting/results/all_germline_filtered_bams_tumor_ci5_cs1e9/unmapped_kmers_blast_{pt}.tsv"
+    threads: 1
+    resources: 
+        mem_mb = 50000, 
+        time = "60:00:00"
+    conda: "envs/conda_blast.yml"
+    shell: 
+        '''export BLASTDB=/home/coroperv/c2i-colon/WorkSpaces/CarmenAndAnika/blasting/blast_dbs/
+        echo $BLASTDB
+        blastn -query {input.unmapped_kmers} -db ref_rep_genomes_all -out {output.blasted_kmers} -evalue 1e-10 -perc_identity 100 -word_size 50 -ungapped -outfmt "6 qseqid sseqid staxid ssciname pident nident length mismatch gapopen gaps qstart qend sstart send evalue bitscore qseq sseq"'''
+
